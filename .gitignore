@@ -25,7 +25,10 @@ build/
 *.db
 *.db-shm
 *.db-wal
-data/
+# Top-level data/ directory used as the SQLite volume mount.
+# Source-tree data/ folders (e.g. apps/web/src/data/) are intentionally tracked.
+/data/
+/apps/*/data/
 
 # Logs
 *.log
