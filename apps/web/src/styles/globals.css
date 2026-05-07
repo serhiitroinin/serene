@@ -11,6 +11,22 @@
   --color-glucose-urgent-low: hsl(12 75% 55%);
   --color-glucose-high: hsl(275 40% 62%);
   --color-glucose-very-high: hsl(290 50% 55%);
+
+  --font-mono-grotesque: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono-data: "IBM Plex Mono", ui-monospace, monospace;
+  --font-display-massive: "Archivo Black", sans-serif;
+  --font-condensed-light: "Bebas Neue", sans-serif;
+  --font-display-cond: "Anton", sans-serif;
+  --font-body-soft: "Manrope", sans-serif;
+  --font-display-luxe: "Playfair Display", serif;
+  --font-serif-zen: "Cormorant Garamond", serif;
+  --font-mono-crt: "VT323", monospace;
+  --font-display-crt: "Major Mono Display", monospace;
+  --font-typewriter: "Special Elite", monospace;
+  --font-serif-modern: "Fraunces", serif;
+  --font-script-hand: "Caveat", cursive;
+  --font-serif-editorial: "Newsreader", serif;
+  --font-bricolage: "Bricolage Grotesque", sans-serif;
 }
 
 @theme inline {

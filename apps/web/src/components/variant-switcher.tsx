@@ -4,30 +4,35 @@ import { variantMeta, variantOrder, type VariantKey } from "~/variants";
 type Props = { current: VariantKey };
 
 export function VariantSwitcher({ current }: Props) {
+  const meta = variantMeta[current];
   return (
-    <div className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border/80 bg-background/85 p-1 shadow-lg shadow-black/30 backdrop-blur-md">
-      <span className="px-3 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-        Variant
-      </span>
-      {variantOrder.map((key) => {
-        const isActive = key === current;
-        const meta = variantMeta[key];
-        return (
-          <Link
-            key={key}
-            to="/"
-            search={{ v: key }}
-            className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
-              isActive
-                ? "bg-foreground text-background"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-            title={meta.description}
-          >
-            {meta.label}
-          </Link>
-        );
-      })}
+    <div className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2">
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-white/70 mix-blend-difference">
+          {meta.label} · {meta.tagline}
+        </p>
+        <nav className="flex items-center gap-0.5 rounded-full border border-white/15 bg-black/70 p-1 shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+          {variantOrder.map((key) => {
+            const isActive = key === current;
+            const m = variantMeta[key];
+            return (
+              <Link
+                key={key}
+                to="/"
+                search={{ v: key }}
+                className={`rounded-full px-3 py-1.5 text-[11px] font-medium tracking-wide transition-colors ${
+                  isActive
+                    ? "bg-white text-black"
+                    : "text-white/60 hover:bg-white/10 hover:text-white"
+                }`}
+                title={m.tagline}
+              >
+                {m.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,35 @@
-export type VariantKey = "linear" | "whoop" | "editorial" | "activity";
+export type VariantKey =
+  | "terminal"
+  | "brutalist"
+  | "velocity"
+  | "almanac"
+  | "atelier"
+  | "synthwave"
+  | "mujo"
+  | "cartographer";
 
 export type GlucosePoint = { t: number; v: number };
+
+export type Treatment = {
+  t: number;
+  kind: "insulin" | "carbs" | "exercise" | "note";
+  label: string;
+  detail?: string;
+};
+
+export type Workout = {
+  id: string;
+  sport: "Run" | "Ride" | "Swim" | "Strength";
+  date: string;
+  duration: number;
+  distance: number;
+  avgHr: number;
+  strain: number;
+  pace?: string;
+  glucoseDelta: number;
+};
+
+export type RoutePoint = { x: number; y: number; v: number };
 
 export type MockData = {
   glucose: {
@@ -14,15 +43,12 @@ export type MockData = {
   };
   tir: { inRange: number; above: number; below: number };
   today: { avg: number; gmi: number; sd: number; cv: number; readings: number };
-  recovery: { score: number; hrv: number; rhr: number; sleep: number };
-  workout: {
-    sport: string;
-    duration: number;
-    distance: number;
-    avgHr: number;
-    strain: number;
-    when: string;
-  };
+  recovery: { score: number; hrv: number; rhr: number; sleep: number; strain: number };
+  workout: Workout;
+  recentWorkouts: ReadonlyArray<Workout>;
+  treatments: ReadonlyArray<Treatment>;
+  weeklyTIR: ReadonlyArray<{ date: string; weekday: string; inRange: number; avg: number }>;
+  route: ReadonlyArray<RoutePoint>;
 };
 
 const generateTrace = (): ReadonlyArray<GlucosePoint> => {
@@ -38,6 +64,36 @@ const generateTrace = (): ReadonlyArray<GlucosePoint> => {
   return points;
 };
 
+const generateRoute = (): ReadonlyArray<RoutePoint> => {
+  const points: RoutePoint[] = [];
+  const total = 80;
+  for (let i = 0; i < total; i++) {
+    const t = i / (total - 1);
+    const x = 0.05 + t * 0.9 + Math.sin(t * 12) * 0.05;
+    const y = 0.7 - Math.sin(t * 4.5) * 0.35 - Math.sin(t * 9) * 0.08;
+    const v = 5.5 + Math.sin(t * 7) * 1.8 + Math.cos(t * 3) * 0.6 + (Math.random() - 0.5) * 0.4;
+    points.push({ x, y: Math.max(0.08, Math.min(0.92, y)), v: Number(v.toFixed(1)) });
+  }
+  return points;
+};
+
+const treatments: ReadonlyArray<Treatment> = (() => {
+  const now = Date.now();
+  const h = (n: number) => now - n * 60 * 60 * 1000;
+  return [
+    { t: h(22), kind: "insulin", label: "Lantus", detail: "18 u" },
+    { t: h(20), kind: "note", label: "Asleep" },
+    { t: h(13), kind: "note", label: "Awake" },
+    { t: h(12.5), kind: "carbs", label: "Oats + berries", detail: "42 g" },
+    { t: h(12.4), kind: "insulin", label: "NovoRapid", detail: "4.2 u" },
+    { t: h(8), kind: "carbs", label: "Almonds", detail: "8 g" },
+    { t: h(4.5), kind: "exercise", label: "Long run", detail: "14.2 km · 1h 30m" },
+    { t: h(2.5), kind: "carbs", label: "Recovery shake", detail: "55 g" },
+    { t: h(2.45), kind: "insulin", label: "NovoRapid", detail: "5.0 u" },
+    { t: h(0.1), kind: "note", label: "In range · stable" },
+  ];
+})();
+
 export const mockData: MockData = {
   glucose: {
     current: 6.8,
@@ -50,15 +106,80 @@ export const mockData: MockData = {
   },
   tir: { inRange: 78, above: 14, below: 8 },
   today: { avg: 7.2, gmi: 6.4, sd: 1.8, cv: 24, readings: 287 },
-  recovery: { score: 64, hrv: 48, rhr: 52, sleep: 7.4 },
+  recovery: { score: 64, hrv: 48, rhr: 52, sleep: 7.4, strain: 14.8 },
   workout: {
+    id: "w-today",
     sport: "Run",
+    date: "Today · 06:14",
     duration: 5400,
     distance: 14200,
     avgHr: 152,
     strain: 14.8,
-    when: "2h ago",
+    glucoseDelta: -2.1,
   },
+  recentWorkouts: [
+    {
+      id: "w-1",
+      sport: "Run",
+      date: "Today · 06:14",
+      duration: 5400,
+      distance: 14200,
+      avgHr: 152,
+      strain: 14.8,
+      glucoseDelta: -2.1,
+    },
+    {
+      id: "w-2",
+      sport: "Ride",
+      date: "Yesterday · 17:08",
+      duration: 3600,
+      distance: 28400,
+      avgHr: 138,
+      strain: 11.2,
+      glucoseDelta: -1.4,
+    },
+    {
+      id: "w-3",
+      sport: "Strength",
+      date: "Mon · 18:30",
+      duration: 2700,
+      distance: 0,
+      avgHr: 124,
+      strain: 9.6,
+      glucoseDelta: 0.8,
+    },
+    {
+      id: "w-4",
+      sport: "Run",
+      date: "Sun · 07:42",
+      duration: 7800,
+      distance: 21100,
+      avgHr: 156,
+      strain: 17.4,
+      glucoseDelta: -3.6,
+    },
+    {
+      id: "w-5",
+      sport: "Swim",
+      date: "Fri · 19:00",
+      duration: 1800,
+      distance: 1800,
+      avgHr: 132,
+      strain: 7.8,
+      glucoseDelta: -0.4,
+    },
+  ],
+  treatments,
+  weeklyTIR: [
+    { date: "May 1", weekday: "Fri", inRange: 71, avg: 7.6 },
+    { date: "May 2", weekday: "Sat", inRange: 82, avg: 6.9 },
+    { date: "May 3", weekday: "Sun", inRange: 64, avg: 8.1 },
+    { date: "May 4", weekday: "Mon", inRange: 76, avg: 7.2 },
+    { date: "May 5", weekday: "Tue", inRange: 80, avg: 7.0 },
+    { date: "May 6", weekday: "Wed", inRange: 73, avg: 7.4 },
+    { date: "May 7", weekday: "Thu", inRange: 78, avg: 7.2 },
+  ],
+  route: generateRoute(),
 };
 
 export const formatGlucose = (v: number, unit: "mmol" = "mmol"): string =>
@@ -74,8 +195,20 @@ export const formatDistance = (meters: number): string =>
   meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${meters} m`;
 
 export const formatPace = (durationSec: number, distanceMeters: number): string => {
+  if (distanceMeters === 0) return "—";
   const paceSecPerKm = (durationSec / distanceMeters) * 1000;
   const m = Math.floor(paceSecPerKm / 60);
   const s = Math.round(paceSecPerKm % 60);
   return `${m}:${s.toString().padStart(2, "0")}/km`;
 };
+
+export const formatRelativeTime = (t: number): string => {
+  const diff = (Date.now() - t) / 1000;
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.round(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.round(diff / 3600)} h ago`;
+  return `${Math.round(diff / 86400)} d ago`;
+};
+
+export const formatClock = (t: number): string =>
+  new Date(t).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
