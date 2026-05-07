@@ -102,8 +102,21 @@ type LibreReading = {
   Timestamp?: string;
   Value?: number;
   ValueInMgPerDl?: number;
+  GlucoseUnits?: number;
   TrendArrow?: number;
 };
+
+const MGDL_PER_MMOL = 18.018;
+
+function readingToMmol(r: LibreReading): number | null {
+  // ValueInMgPerDl is always mg/dL when present — most reliable source.
+  if (typeof r.ValueInMgPerDl === "number")
+    return Number((r.ValueInMgPerDl / MGDL_PER_MMOL).toFixed(1));
+  if (typeof r.Value !== "number") return null;
+  // GlucoseUnits: 1 = mg/dL, 0 = mmol/L (per LibreLinkUp API)
+  if (r.GlucoseUnits === 1) return Number((r.Value / MGDL_PER_MMOL).toFixed(1));
+  return Number(r.Value.toFixed(1));
+}
 
 const TREND_MAP: Record<
   number,
@@ -157,7 +170,7 @@ async function syncLibre(
   const rows = merged
     .map((r) => {
       const ts = parseLibreTimestamp(r.Timestamp ?? r.FactoryTimestamp ?? undefined);
-      const mmol = typeof r.Value === "number" ? r.Value : null;
+      const mmol = readingToMmol(r);
       if (!ts || mmol == null) return null;
       const trendKey = r.TrendArrow ? (TREND_MAP[r.TrendArrow] ?? null) : null;
       return {

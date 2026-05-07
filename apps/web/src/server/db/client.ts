@@ -36,9 +36,15 @@ export function getDb() {
 export type DB = ReturnType<typeof getDb>;
 
 export function getOwnerId(): string {
-  const fromEnv = process.env.SERENE_OWNER_ID;
-  if (fromEnv) return fromEnv;
   const db = getDb();
+  const fromEnv = process.env.SERENE_OWNER_ID;
+  if (fromEnv) {
+    db.insert(schema.users)
+      .values({ id: fromEnv, email: null, name: null })
+      .onConflictDoNothing()
+      .run();
+    return fromEnv;
+  }
   const existing = db.select().from(schema.users).limit(1).all();
   if (existing[0]) return existing[0].id;
   const id = crypto.randomUUID();

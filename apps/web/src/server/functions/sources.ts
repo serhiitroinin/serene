@@ -4,7 +4,7 @@ import { getDb, getOwnerId } from "../db/client";
 import type { SourceId } from "../db/schema";
 import { getSource, sourceList } from "../sources/registry";
 import { deleteCredential, listCredentials, saveCredential } from "../sources/store";
-import { exchangeWhoopCode } from "../sources/whoop";
+import { consumeWhoopState, exchangeWhoopCode, issueWhoopState } from "../sources/whoop";
 import { runSync } from "../sync/scheduler";
 
 const sourceIdSchema = z.enum(["libre", "whoop", "garmin"]);
@@ -66,13 +66,19 @@ export const triggerSyncFn = createServerFn({ method: "POST" })
 
 export const getWhoopAuthorizeUrlFn = createServerFn({ method: "GET" }).handler(async () => {
   const { buildWhoopAuthorizeUrl } = await import("../sources/whoop");
-  const state = crypto.randomUUID();
+  const state = issueWhoopState();
   return { url: buildWhoopAuthorizeUrl(state), state };
 });
 
 export const completeWhoopOAuthFn = createServerFn({ method: "POST" })
-  .inputValidator((input: { code: string }) => ({ code: z.string().min(1).parse(input.code) }))
+  .inputValidator((input: { code: string; state: string }) => ({
+    code: z.string().min(1).parse(input.code),
+    state: z.string().min(1).parse(input.state),
+  }))
   .handler(async ({ data }) => {
+    if (!consumeWhoopState(data.state)) {
+      return { ok: false, error: "OAuth state mismatch — refusing to exchange code." };
+    }
     const db = getDb();
     const userId = getOwnerId();
     try {

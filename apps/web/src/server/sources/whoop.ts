@@ -37,6 +37,32 @@ export function getWhoopClient(): { id: string; secret: string } {
   return { id, secret };
 }
 
+// Single-process single-tenant state store. State expires after 10 minutes.
+const issuedStates = new Map<string, number>();
+const STATE_TTL_MS = 10 * 60 * 1000;
+
+function pruneStates(): void {
+  const now = Date.now();
+  for (const [s, exp] of issuedStates) {
+    if (exp < now) issuedStates.delete(s);
+  }
+}
+
+export function issueWhoopState(): string {
+  pruneStates();
+  const state = crypto.randomUUID();
+  issuedStates.set(state, Date.now() + STATE_TTL_MS);
+  return state;
+}
+
+export function consumeWhoopState(state: string): boolean {
+  pruneStates();
+  const exp = issuedStates.get(state);
+  if (exp == null) return false;
+  issuedStates.delete(state);
+  return exp >= Date.now();
+}
+
 export function buildWhoopAuthorizeUrl(state: string): string {
   const { id } = getWhoopClient();
   const params = new URLSearchParams({

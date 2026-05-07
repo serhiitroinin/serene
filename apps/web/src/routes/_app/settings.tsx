@@ -60,11 +60,13 @@ function SettingsPage() {
   const [oauthStatus, setOauthStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!search.code) return;
+    if (!search.code || !search.state) return;
     let cancelled = false;
     (async () => {
       try {
-        const r = await completeWhoopOAuthFn({ data: { code: search.code! } });
+        const r = await completeWhoopOAuthFn({
+          data: { code: search.code!, state: search.state! },
+        });
         if (cancelled) return;
         if (r.ok) {
           setOauthStatus("WHOOP connected.");
@@ -75,7 +77,6 @@ function SettingsPage() {
       } catch (err) {
         if (!cancelled) setOauthStatus(err instanceof Error ? err.message : String(err));
       } finally {
-        // Strip code/state from URL
         if (!cancelled) {
           router.navigate({ to: "/settings", search: { tab: "sources" }, replace: true });
         }
@@ -84,7 +85,7 @@ function SettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [search.code, router]);
+  }, [search.code, search.state, router]);
 
   return (
     <>
