@@ -7,7 +7,7 @@ const display = { fontFamily: "var(--font-bricolage)" } as const;
 const mono = { fontFamily: "var(--font-mono-grotesque)" } as const;
 const data = { fontFamily: "var(--font-mono-data)" } as const;
 
-export const Route = createFileRoute("/_app/activity")({
+export const Route = createFileRoute("/_app/activity/")({
   component: ActivityList,
 });
 

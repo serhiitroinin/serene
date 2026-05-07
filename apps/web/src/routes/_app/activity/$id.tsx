@@ -17,7 +17,7 @@ const display = { fontFamily: "var(--font-bricolage)" } as const;
 const mono = { fontFamily: "var(--font-mono-grotesque)" } as const;
 const data = { fontFamily: "var(--font-mono-data)" } as const;
 
-export const Route = createFileRoute("/_app/activity_/$id")({
+export const Route = createFileRoute("/_app/activity/$id")({
   component: ActivityDetail,
   loader: ({ params }) => {
     const w = mockData.recentWorkouts.find((x) => x.id === params.id);
