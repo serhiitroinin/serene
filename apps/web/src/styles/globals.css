@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-glucose-in-range: hsl(195 30% 55%);
+  --color-glucose-low: hsl(35 65% 55%);
+  --color-glucose-urgent-low: hsl(12 75% 55%);
+  --color-glucose-high: hsl(275 40% 62%);
+  --color-glucose-very-high: hsl(290 50% 55%);
+}

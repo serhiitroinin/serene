@@ -19,6 +19,7 @@ Thank you for considering a contribution. serene is built in public; the goal is
 2. **Implement** with small, focused diffs.
 
 3. **Run all checks** before pushing:
+
    ```bash
    bunx oxlint
    bunx oxfmt --check
@@ -27,6 +28,7 @@ Thank you for considering a contribution. serene is built in public; the goal is
    ```
 
 4. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/):
+
    ```
    feat(glucose): add AGP percentile-band chart
    fix(whoop): handle expired refresh token on first sync
@@ -41,7 +43,7 @@ Thank you for considering a contribution. serene is built in public; the goal is
 ## Code conventions
 
 - TypeScript strict; no `any`, no `@ts-ignore` without an explanation.
-- No unnecessary comments. Comment only when *why* is non-obvious.
+- No unnecessary comments. Comment only when _why_ is non-obvious.
 - No premature abstractions or backwards-compat shims pre-1.0.
 - Glucose canonical unit is mmol/L. Convert on display.
 - Server-only code in `apps/web/src/server/`. Pure utilities in `packages/core`.

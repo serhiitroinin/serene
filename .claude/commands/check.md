@@ -1,22 +1,28 @@
 ---
-description: Run all local quality checks (lint, format, typecheck, tests)
+description: Run all local quality checks (lint, format, build, typecheck, tests)
 ---
 
 Run the same checks CI runs, locally. Do this before every push.
 
 ```bash
-bunx oxlint && bunx oxfmt --check && bunx tsc --noEmit && bunx vitest run
+bun run check
 ```
 
-If any step fails, fix the root cause and re-run. Never use `--no-verify`, `--skip-checks`, or similar bypasses. lefthook runs the same set on `pre-push` once it's wired up.
+Which expands to:
+
+```bash
+bun run lint && bun run format:check && bun run build && bun run typecheck && bun run test
+```
+
+The `build` step is intentional: it generates `routeTree.gen.ts`, which `typecheck` depends on. Without it, fresh clones (or branches that touched routes) would fail typecheck even though CI passes.
+
+If any step fails, fix the root cause and re-run. Never use `--no-verify`, `--skip-checks`, or similar bypasses. Lefthook runs the same set on `pre-push`.
 
 If oxlint or oxfmt suggest auto-fixes, apply them with:
 
 ```bash
-bunx oxlint --fix
-bunx oxfmt
+bun run lint:fix
+bun run format
 ```
 
-then re-run /check.
-
-If the project is not yet scaffolded (no `package.json` at the repo root), report that and skip — checks will become meaningful starting from W18 day 2 once the workspace is initialized.
+then re-run `/check`.

@@ -10,16 +10,19 @@ Start a bug fix in serene. Same flow as `/feature` with `fix/` prefix and a regr
 1. Reproduce the bug locally first if you haven't already. Capture the failing scenario.
 
 2. Confirm clean working tree:
+
    ```bash
    git status
    ```
 
 3. Refresh main:
+
    ```bash
    git checkout main && git pull --ff-only
    ```
 
 4. Create the branch:
+
    ```bash
    git checkout -b fix/$ARGUMENTS
    ```
@@ -27,6 +30,7 @@ Start a bug fix in serene. Same flow as `/feature` with `fix/` prefix and a regr
 5. Plan as a TaskCreate todo. Include a regression test if the bug is reproducible at the unit level.
 
 6. Implement. Commit conventionally:
+
    ```
    fix(<scope>): <imperative subject>
 

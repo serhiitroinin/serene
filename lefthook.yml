@@ -1,0 +1,12 @@
+pre-push:
+  parallel: true
+  commands:
+    lint:
+      run: bun run lint
+    format:
+      run: bun run format:check
+    test:
+      run: bun run test
+    # build runs before typecheck so routeTree.gen.ts is generated; piped sequentially
+    build-typecheck:
+      run: bun run build && bun run typecheck
