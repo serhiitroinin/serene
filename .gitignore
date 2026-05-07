@@ -13,6 +13,9 @@ build/
 # TypeScript
 *.tsbuildinfo
 
+# TanStack Router generated route tree
+**/routeTree.gen.ts
+
 # Environment
 .env
 .env.local

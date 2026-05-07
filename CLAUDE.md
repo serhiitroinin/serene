@@ -13,25 +13,25 @@ Guidance for Claude Code (and any AI agent) working in this repository.
 
 ## Stack
 
-| Layer | Tool |
-|---|---|
-| Runtime | Bun (≥ 1.3.x) |
-| Framework | TanStack Start (v1, 2026) |
-| Language | TypeScript strict + `exactOptionalPropertyTypes` |
-| Database | SQLite via `bun:sqlite` |
-| ORM | Drizzle (SQLite dialect) |
-| UI | shadcn/ui + Tailwind |
-| Charts | shadcn Charts (Recharts) for basic; custom SVG + visx for signature (AGP, CGM trace, glucose × workout) |
-| Maps | mapcn.dev (MapLibre + Protomaps tiles) |
-| Validation | zod |
-| Scheduling | croner (in-process) |
-| Lint | oxlint |
-| Format | oxfmt |
-| Tests | Vitest (units), Playwright (one e2e: setup wizard) |
-| Hooks | lefthook |
-| CI | GitHub Actions |
-| Versioning | Changesets + Conventional Commits |
-| Deploy | Docker + docker-compose |
+| Layer      | Tool                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------- |
+| Runtime    | Bun (≥ 1.3.x)                                                                                           |
+| Framework  | TanStack Start (v1, 2026)                                                                               |
+| Language   | TypeScript strict + `exactOptionalPropertyTypes`                                                        |
+| Database   | SQLite via `bun:sqlite`                                                                                 |
+| ORM        | Drizzle (SQLite dialect)                                                                                |
+| UI         | shadcn/ui + Tailwind                                                                                    |
+| Charts     | shadcn Charts (Recharts) for basic; custom SVG + visx for signature (AGP, CGM trace, glucose × workout) |
+| Maps       | mapcn.dev (MapLibre + Protomaps tiles)                                                                  |
+| Validation | zod                                                                                                     |
+| Scheduling | croner (in-process)                                                                                     |
+| Lint       | oxlint                                                                                                  |
+| Format     | oxfmt                                                                                                   |
+| Tests      | Vitest (units), Playwright (one e2e: setup wizard)                                                      |
+| Hooks      | lefthook                                                                                                |
+| CI         | GitHub Actions                                                                                          |
+| Versioning | Changesets + Conventional Commits                                                                       |
+| Deploy     | Docker + docker-compose                                                                                 |
 
 See `ARCHITECTURE.md` (added during W18 scaffolding) for the full architectural plan.
 
@@ -62,17 +62,17 @@ Every change follows the same flow. No shortcuts.
 
 Branch prefix matches the conventional-commit type. Kebab-case description, ≤ 50 chars. No scopes in the branch (the scope goes in the commit message).
 
-| Prefix | Use for |
-|---|---|
-| `feat/<desc>` | New feature |
-| `fix/<desc>` | Bug fix |
-| `chore/<desc>` | Tooling, deps, repo housekeeping |
-| `docs/<desc>` | Documentation only |
+| Prefix            | Use for                             |
+| ----------------- | ----------------------------------- |
+| `feat/<desc>`     | New feature                         |
+| `fix/<desc>`      | Bug fix                             |
+| `chore/<desc>`    | Tooling, deps, repo housekeeping    |
+| `docs/<desc>`     | Documentation only                  |
 | `refactor/<desc>` | Code change with no behavior change |
-| `test/<desc>` | Tests only |
-| `perf/<desc>` | Performance improvement |
-| `build/<desc>` | Build system / Docker |
-| `ci/<desc>` | CI config only |
+| `test/<desc>`     | Tests only                          |
+| `perf/<desc>`     | Performance improvement             |
+| `build/<desc>`    | Build system / Docker               |
+| `ci/<desc>`       | CI config only                      |
 
 ### Conventional commits
 
@@ -87,9 +87,9 @@ Format:
 ```
 
 - **type**: matches branch prefix (feat, fix, chore, docs, refactor, test, perf, build, ci)
-- **scope** *(optional)*: a directory or domain (`glucose`, `whoop`, `db`, `ui`, `setup`, etc.)
+- **scope** _(optional)_: a directory or domain (`glucose`, `whoop`, `db`, `ui`, `setup`, etc.)
 - **subject**: imperative, no trailing period, ≤ 72 chars
-- **body**: wrap at 100 chars; explain *why*, not *what*
+- **body**: wrap at 100 chars; explain _why_, not _what_
 - **footer**: `BREAKING CHANGE:` for incompatibilities; issue refs (`Fixes #12`, `Refs #34`)
 
 Examples:
@@ -121,12 +121,15 @@ Body template:
 
 ```markdown
 ## Summary
+
 - 1–3 bullets on what changed and why.
 
 ## Test plan
+
 - [ ] Bullet checklist of how the change was verified.
 
 ## Screenshots / Loom
+
 (UI changes only.)
 ```
 
@@ -143,7 +146,7 @@ Use `/merge-pr` to construct this correctly. A bare `gh pr merge --squash` disca
 ## Code conventions
 
 - **TypeScript strict.** No `any`, no `@ts-ignore` without a why-comment. Use `unknown` and narrow.
-- **No unnecessary comments.** Only comment when *why* is non-obvious. Don't explain *what* — code says that. Don't reference current task / issue / fix in comments — that belongs in the commit/PR.
+- **No unnecessary comments.** Only comment when _why_ is non-obvious. Don't explain _what_ — code says that. Don't reference current task / issue / fix in comments — that belongs in the commit/PR.
 - **No backwards-compat shims** during sprint. Rename freely; we are pre-1.0.
 - **No premature abstractions.** Three similar lines is better than the wrong abstraction.
 - **No defensive validation** beyond system boundaries (env vars via zod, server function inputs via zod).

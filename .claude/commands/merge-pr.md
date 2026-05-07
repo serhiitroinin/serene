@@ -7,22 +7,27 @@ Squash-merge the open PR. The squash commit body must preserve the PR descriptio
 ## Steps
 
 1. Confirm a PR is open for the current branch:
+
    ```bash
    gh pr view --json url,number,title,body,state,mergeable,statusCheckRollup
    ```
 
 2. Confirm CI is green:
+
    ```bash
    gh pr checks
    ```
+
    If pending, use `gh pr checks --watch`. If failing, fix and push more commits — do not bypass.
 
 3. Get the commit list for the squash trailer:
+
    ```bash
    gh pr view --json commits --jq '.commits[] | "\(.oid[0:7]) \(.messageHeadline)"'
    ```
 
 4. Construct the squash commit body:
+
    ```
    <PR body — Summary + Test plan>
 
@@ -35,6 +40,7 @@ Squash-merge the open PR. The squash commit body must preserve the PR descriptio
    ```
 
 5. Squash-merge with the constructed subject + body, and delete the branch:
+
    ```bash
    gh pr merge --squash \
      --subject "<PR title>" \
@@ -52,6 +58,7 @@ Squash-merge the open PR. The squash commit body must preserve the PR descriptio
    ```
 
 The squash commit on main now contains:
+
 - Subject: PR title (conventional-commit style)
 - Body: PR description (Summary + Test plan)
 - Trailer: list of original commits as `<short-sha> <subject>`
