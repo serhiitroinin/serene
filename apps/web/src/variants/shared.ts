@@ -1,14 +1,11 @@
 export type VariantKey =
-  | "aurora"
-  | "bento"
-  | "prism"
-  | "reverie"
-  | "mosaic"
-  | "horizon"
   | "studio"
-  | "canopy"
-  | "drift"
-  | "luxe";
+  | "mosaic"
+  | "archive"
+  | "panel"
+  | "blueprint"
+  | "orchid"
+  | "lattice";
 
 export type GlucosePoint = { t: number; v: number };
 
