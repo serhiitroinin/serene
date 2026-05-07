@@ -1,12 +1,14 @@
 export type VariantKey =
-  | "linear"
-  | "stripe"
-  | "vercel"
-  | "notion"
-  | "arc"
-  | "datadog"
-  | "apple"
-  | "pulse";
+  | "aurora"
+  | "bento"
+  | "prism"
+  | "reverie"
+  | "mosaic"
+  | "horizon"
+  | "studio"
+  | "canopy"
+  | "drift"
+  | "luxe";
 
 export type GlucosePoint = { t: number; v: number };
 
