@@ -1,12 +1,12 @@
 export type VariantKey =
-  | "terminal"
-  | "brutalist"
-  | "velocity"
-  | "almanac"
-  | "atelier"
-  | "synthwave"
-  | "mujo"
-  | "cartographer";
+  | "linear"
+  | "stripe"
+  | "vercel"
+  | "notion"
+  | "arc"
+  | "datadog"
+  | "apple"
+  | "pulse";
 
 export type GlucosePoint = { t: number; v: number };
 
@@ -29,7 +29,7 @@ export type Workout = {
   glucoseDelta: number;
 };
 
-export type RoutePoint = { x: number; y: number; v: number };
+export type RoutePoint = { lng: number; lat: number; v: number };
 
 export type MockData = {
   glucose: {
@@ -64,18 +64,24 @@ const generateTrace = (): ReadonlyArray<GlucosePoint> => {
   return points;
 };
 
+// Synthetic Amsterdam loop — Vondelpark → Westerpark → centrum → back. ~14 km.
 const generateRoute = (): ReadonlyArray<RoutePoint> => {
   const points: RoutePoint[] = [];
-  const total = 80;
+  const center = { lng: 4.879, lat: 52.358 };
+  const total = 90;
   for (let i = 0; i < total; i++) {
     const t = i / (total - 1);
-    const x = 0.05 + t * 0.9 + Math.sin(t * 12) * 0.05;
-    const y = 0.7 - Math.sin(t * 4.5) * 0.35 - Math.sin(t * 9) * 0.08;
+    const angle = t * Math.PI * 2 + Math.sin(t * 3.5) * 0.45;
+    const radius = 0.018 + Math.sin(t * 7.5) * 0.006 + Math.cos(t * 2.2) * 0.003;
+    const lng = center.lng + Math.cos(angle) * radius * 1.55;
+    const lat = center.lat + Math.sin(angle) * radius;
     const v = 5.5 + Math.sin(t * 7) * 1.8 + Math.cos(t * 3) * 0.6 + (Math.random() - 0.5) * 0.4;
-    points.push({ x, y: Math.max(0.08, Math.min(0.92, y)), v: Number(v.toFixed(1)) });
+    points.push({ lng, lat, v: Number(v.toFixed(1)) });
   }
   return points;
 };
+
+export const ROUTE_CENTER: [number, number] = [4.879, 52.358];
 
 const treatments: ReadonlyArray<Treatment> = (() => {
   const now = Date.now();

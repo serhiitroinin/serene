@@ -1,79 +1,44 @@
-import { AlmanacVariant } from "./almanac";
-import { AtelierVariant } from "./atelier";
-import { BrutalistVariant } from "./brutalist";
-import { CartographerVariant } from "./cartographer";
-import { MujoVariant } from "./mujo";
-import { SynthwaveVariant } from "./synthwave";
-import { TerminalVariant } from "./terminal";
-import { VelocityVariant } from "./velocity";
+import { AppleVariant } from "./apple";
+import { ArcVariant } from "./arc";
+import { DatadogVariant } from "./datadog";
+import { LinearVariant } from "./linear";
+import { NotionVariant } from "./notion";
+import { PulseVariant } from "./pulse";
+import { StripeVariant } from "./stripe";
+import { VercelVariant } from "./vercel";
 import type { VariantKey } from "./shared";
 
 export type { VariantKey };
 
 export const variants: Record<VariantKey, () => React.JSX.Element> = {
-  terminal: TerminalVariant,
-  brutalist: BrutalistVariant,
-  velocity: VelocityVariant,
-  almanac: AlmanacVariant,
-  atelier: AtelierVariant,
-  synthwave: SynthwaveVariant,
-  mujo: MujoVariant,
-  cartographer: CartographerVariant,
+  linear: LinearVariant,
+  stripe: StripeVariant,
+  vercel: VercelVariant,
+  notion: NotionVariant,
+  arc: ArcVariant,
+  datadog: DatadogVariant,
+  apple: AppleVariant,
+  pulse: PulseVariant,
 };
 
-export const variantMeta: Record<
-  VariantKey,
-  { label: string; tagline: string; tone: "dark" | "light" | "duotone" }
-> = {
-  terminal: {
-    label: "Terminal",
-    tagline: "Trading-floor precision",
-    tone: "dark",
-  },
-  brutalist: {
-    label: "Brutalist",
-    tagline: "Concrete, neon, no apologies",
-    tone: "dark",
-  },
-  velocity: {
-    label: "Velocity",
-    tagline: "Kinetic athletic energy",
-    tone: "dark",
-  },
-  almanac: {
-    label: "Almanac",
-    tagline: "Vintage runner's journal",
-    tone: "light",
-  },
-  atelier: {
-    label: "Atelier",
-    tagline: "Fashion-house editorial",
-    tone: "light",
-  },
-  synthwave: {
-    label: "Synthwave",
-    tagline: "CRT cyberpunk HUD",
-    tone: "dark",
-  },
-  mujo: {
-    label: "Mujo",
-    tagline: "Japanese reductionism",
-    tone: "light",
-  },
-  cartographer: {
-    label: "Cartographer",
-    tagline: "Topographic field log",
-    tone: "duotone",
-  },
+export const variantMeta: Record<VariantKey, { label: string; tagline: string }> = {
+  linear: { label: "Linear", tagline: "Sidebar · sharp · tools-engineer craft" },
+  stripe: { label: "Stripe", tagline: "Editorial · gradient · generous spacing" },
+  vercel: { label: "Vercel", tagline: "Black & white · monospace · operations" },
+  notion: { label: "Notion", tagline: "Block · long-form · content-first" },
+  arc: { label: "Arc", tagline: "Glassmorphism · pastel · rounded" },
+  datadog: { label: "Datadog", tagline: "Monitoring dense · Plex · violet alerts" },
+  apple: { label: "Apple", tagline: "Card · ring · semantic colors" },
+  pulse: { label: "Pulse", tagline: "Calm · serif headlines · teal" },
 };
 
 export const variantOrder: ReadonlyArray<VariantKey> = [
-  "terminal",
-  "brutalist",
-  "velocity",
-  "almanac",
-  "atelier",
-  "synthwave",
-  "mujo",
-  "cartographer",
+  "linear",
+  "stripe",
+  "vercel",
+  "notion",
+  "arc",
+  "datadog",
+  "apple",
+  "pulse",
 ];

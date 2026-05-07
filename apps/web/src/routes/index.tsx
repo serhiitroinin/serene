@@ -10,7 +10,7 @@ type Search = { v: VariantKey };
 export const Route = createFileRoute("/")({
   component: Home,
   validateSearch: (search: Record<string, unknown>): Search => ({
-    v: isVariantKey(search.v) ? search.v : "terminal",
+    v: isVariantKey(search.v) ? search.v : "linear",
   }),
 });
 

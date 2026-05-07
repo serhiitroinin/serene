@@ -14,17 +14,7 @@
 
   --font-mono-grotesque: "JetBrains Mono", ui-monospace, monospace;
   --font-mono-data: "IBM Plex Mono", ui-monospace, monospace;
-  --font-display-massive: "Archivo Black", sans-serif;
-  --font-condensed-light: "Bebas Neue", sans-serif;
-  --font-display-cond: "Anton", sans-serif;
   --font-body-soft: "Manrope", sans-serif;
-  --font-display-luxe: "Playfair Display", serif;
-  --font-serif-zen: "Cormorant Garamond", serif;
-  --font-mono-crt: "VT323", monospace;
-  --font-display-crt: "Major Mono Display", monospace;
-  --font-typewriter: "Special Elite", monospace;
-  --font-serif-modern: "Fraunces", serif;
-  --font-script-hand: "Caveat", cursive;
   --font-serif-editorial: "Newsreader", serif;
   --font-bricolage: "Bricolage Grotesque", sans-serif;
 }
@@ -150,5 +140,11 @@
   }
   html {
     @apply font-sans;
+  }
+  .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  }
+  .maplibregl-popup-tip {
+    @apply hidden!;
   }
 }

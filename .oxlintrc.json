@@ -20,6 +20,7 @@
     "**/node_modules/**",
     "**/routeTree.gen.ts",
     "**/.vite/**",
-    "**/coverage/**"
+    "**/coverage/**",
+    "**/components/ui/map.tsx"
   ]
 }

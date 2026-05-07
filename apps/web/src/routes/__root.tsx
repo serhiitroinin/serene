@@ -6,19 +6,9 @@ import "../styles/globals.css";
 const FONTS_URL =
   "https://fonts.googleapis.com/css2?" +
   [
-    "family=JetBrains+Mono:wght@300;400;500;700",
-    "family=IBM+Plex+Mono:wght@300;400;500;600;700",
-    "family=Archivo+Black",
-    "family=Bebas+Neue",
-    "family=Anton",
+    "family=JetBrains+Mono:wght@400;500;600;700",
+    "family=IBM+Plex+Mono:wght@300;400;500;600",
     "family=Manrope:wght@200..800",
-    "family=Playfair+Display:ital,wght@0,400..900;1,400..900",
-    "family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700",
-    "family=VT323",
-    "family=Major+Mono+Display",
-    "family=Special+Elite",
-    "family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900",
-    "family=Caveat:wght@400..700",
     "family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700",
     "family=Bricolage+Grotesque:opsz,wght@12..96,200..800",
     "display=swap",
@@ -54,9 +44,15 @@ function RootComponent() {
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          // Avoid theme flash: read localStorage before paint.
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('serene-theme');var d=document.documentElement;if(t==='light'){d.classList.remove('dark');d.classList.add('light')}else if(t==='dark'){d.classList.add('dark')}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="bg-background text-foreground antialiased">
         {children}
