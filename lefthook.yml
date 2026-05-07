@@ -5,7 +5,8 @@ pre-push:
       run: bun run lint
     format:
       run: bun run format:check
-    typecheck:
-      run: bun run typecheck
     test:
       run: bun run test
+    # build runs before typecheck so routeTree.gen.ts is generated; piped sequentially
+    build-typecheck:
+      run: bun run build && bun run typecheck

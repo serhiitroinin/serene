@@ -102,16 +102,15 @@ chore: bump bun to 1.3.10
 
 ### Local checks (before push)
 
-Run `/check` or:
+Run `/check` or `bun run check`, which expands to:
 
 ```bash
-bunx oxlint
-bunx oxfmt --check
-bunx tsc --noEmit
-bunx vitest run
+bun run lint && bun run format:check && bun run build && bun run typecheck && bun run test
 ```
 
-If any check fails, fix the root cause. Do not use `--no-verify` or skip flags. lefthook runs the same checks on `pre-push` once it's wired up.
+`build` runs before `typecheck` because TanStack Start generates `routeTree.gen.ts` during the build step, and typecheck depends on it.
+
+If any check fails, fix the root cause. Do not use `--no-verify` or skip flags. Lefthook runs the same checks on `pre-push`.
 
 ### Pull requests
 
