@@ -1,20 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { VariantSwitcher } from "~/components/variant-switcher";
+import { variants, type VariantKey } from "~/variants";
+
+const isVariantKey = (value: unknown): value is VariantKey =>
+  value === "linear" || value === "whoop" || value === "editorial" || value === "activity";
+
+type Search = { v: VariantKey };
 
 export const Route = createFileRoute("/")({
   component: Home,
+  validateSearch: (search: Record<string, unknown>): Search => ({
+    v: isVariantKey(search.v) ? search.v : "linear",
+  }),
 });
 
 function Home() {
+  const { v } = Route.useSearch();
+  const Variant = variants[v];
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center px-6 text-center">
-      <div className="max-w-xl space-y-6">
-        <h1 className="text-5xl font-semibold tracking-tight">serene</h1>
-        <p className="text-lg text-zinc-400 leading-relaxed">
-          A designer-grade open-source dashboard for athletes with Type 1 Diabetes. Glucose
-          alongside recovery and training.
-        </p>
-        <p className="text-sm text-zinc-500">Status: scaffolding · v0.1 · May 2026</p>
-      </div>
-    </main>
+    <>
+      <Variant />
+      <VariantSwitcher current={v} />
+    </>
   );
 }
