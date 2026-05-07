@@ -9,5 +9,14 @@ export default defineConfig({
   server: {
     port: 3001,
   },
+  // Bun built-in modules (`bun:sqlite`, etc.) and node:* must be externalized;
+  // Vite's bundler / Node's default ESM loader can't resolve `bun:` URLs.
+  ssr: {
+    external: ["bun:sqlite", "bun:test", "bun:ffi"],
+    noExternal: [],
+  },
+  optimizeDeps: {
+    exclude: ["bun:sqlite", "bun:test", "bun:ffi"],
+  },
   plugins: [tsconfigPaths(), tanstackStart(), nitro({ preset: "bun" }), viteReact(), tailwindcss()],
 });
