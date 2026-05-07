@@ -1,8 +1,8 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Heart, MapPin, Mountain, Share2, Timer, Zap } from "lucide-react";
-import { Sparkline } from "~/components/charts/sparkline";
-import { PageTopbar } from "~/components/app/topbar";
-import { Map, MapControls, MapMarker, MapRoute, MarkerContent } from "~/components/ui/map";
+import { Sparkline } from "../../../components/charts/sparkline";
+import { PageTopbar } from "../../../components/app/topbar";
+import { Map, MapControls, MapMarker, MapRoute, MarkerContent } from "../../../components/ui/map";
 import {
   formatClock,
   formatDistance,
@@ -11,7 +11,7 @@ import {
   formatPace,
   mockData,
   ROUTE_CENTER,
-} from "~/data/mock";
+} from "../../../data/mock";
 
 const display = { fontFamily: "var(--font-bricolage)" } as const;
 const mono = { fontFamily: "var(--font-mono-grotesque)" } as const;
