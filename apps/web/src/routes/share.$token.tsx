@@ -2,18 +2,26 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { Sparkline } from "~/components/charts/sparkline";
 import { ThemeToggle } from "~/components/theme-toggle";
-import { formatGlucose, mockData } from "~/data/mock";
+import { formatGlucose } from "~/lib/format";
+import { getGlucoseTraceFn } from "~/server/functions/data";
 
 const display = { fontFamily: "var(--font-bricolage)" } as const;
 const mono = { fontFamily: "var(--font-mono-grotesque)" } as const;
 
 export const Route = createFileRoute("/share/$token")({
   component: SharePage,
+  loader: () => getGlucoseTraceFn(),
 });
 
 function SharePage() {
   const { token } = Route.useParams();
-  const { glucose, tir, today } = mockData;
+  const readings = Route.useLoaderData();
+  const empty = readings.length === 0;
+  const current = readings.at(-1);
+  const inRange = empty
+    ? 0
+    : Math.round((readings.filter((r) => r.v >= 3.9 && r.v <= 10).length / readings.length) * 100);
+  const avg = empty ? 0 : readings.reduce((s, r) => s + r.v, 0) / readings.length;
 
   return (
     <div className="relative min-h-dvh bg-background text-foreground">
@@ -47,45 +55,43 @@ function SharePage() {
 
       <main className="relative mx-auto max-w-2xl px-6 pb-12">
         <div className="rounded-3xl border border-border/40 bg-card/90 p-8 backdrop-blur-xl">
-          <p className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs text-emerald-700 dark:text-emerald-300">
-            <span className="size-1.5 rounded-full bg-emerald-500" />
-            in range · stable · 4 minutes ago
-          </p>
-          <p
-            className="mt-6 flex items-baseline gap-2 text-7xl font-semibold tabular-nums leading-[0.85]"
-            style={display}
-          >
-            {formatGlucose(glucose.current)}
-            <span className="text-lg font-normal text-muted-foreground">mmol/L</span>
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">target range 3.9 – 10.0 mmol/L</p>
-          <div className="mt-6 h-32 text-emerald-500/85">
-            <Sparkline
-              data={glucose.last24h}
-              width={520}
-              height={128}
-              showRangeBand
-              strokeColor="currentColor"
-              bandColor="hsl(150 60% 55%)"
-              className="size-full"
-            />
-          </div>
-          <div
-            className="mt-3 flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground"
-            style={mono}
-          >
-            <span>−24h</span>
-            <span>−12h</span>
-            <span>now</span>
-          </div>
-
-          <hr className="my-6 border-border/40" />
-
-          <div className="grid grid-cols-3 gap-4">
-            <Stat label="Time in range" value={`${tir.inRange}%`} sub="last 24h" />
-            <Stat label="Average" value={formatGlucose(today.avg)} sub="mmol/L · 24h" />
-            <Stat label="Readings" value={today.readings.toString()} sub="last 24h" />
-          </div>
+          {empty ? (
+            <p className="text-sm text-muted-foreground">
+              Owner hasn't connected a glucose source yet.
+            </p>
+          ) : (
+            <>
+              <p className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs text-emerald-700 dark:text-emerald-300">
+                <span className="size-1.5 rounded-full bg-emerald-500" />
+                {readings.length} readings · last 24h
+              </p>
+              <p
+                className="mt-6 flex items-baseline gap-2 text-7xl font-semibold tabular-nums leading-[0.85]"
+                style={display}
+              >
+                {formatGlucose(current?.v ?? 0)}
+                <span className="text-lg font-normal text-muted-foreground">mmol/L</span>
+              </p>
+              <p className="mt-3 text-sm text-muted-foreground">target range 3.9 – 10.0 mmol/L</p>
+              <div className="mt-6 h-32 text-emerald-500/85">
+                <Sparkline
+                  data={readings}
+                  width={520}
+                  height={128}
+                  showRangeBand
+                  strokeColor="currentColor"
+                  bandColor="hsl(150 60% 55%)"
+                  className="size-full"
+                />
+              </div>
+              <hr className="my-6 border-border/40" />
+              <div className="grid grid-cols-3 gap-4">
+                <Stat label="Time in range" value={`${inRange}%`} sub="last 24h" />
+                <Stat label="Average" value={formatGlucose(avg)} sub="mmol/L · 24h" />
+                <Stat label="Readings" value={readings.length.toString()} sub="last 24h" />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-dashed border-border/60 bg-card/60 p-4 text-xs">
@@ -93,20 +99,10 @@ function SharePage() {
           <div className="text-muted-foreground">
             <p>Read-only view. Glucose only · no activity, recovery, or treatments.</p>
             <p className="mt-1" style={mono}>
-              token <span className="text-foreground">{token.slice(0, 12)}…</span> · expires in 28
-              days · 14 visits
+              token <span className="text-foreground">{token.slice(0, 12)}…</span>
             </p>
           </div>
         </div>
-
-        <footer className="mt-10 text-center text-xs text-muted-foreground" style={mono}>
-          <p>serene · informational only · not medical advice</p>
-          <p className="mt-1">
-            <a href="https://getserene.health" className="hover:text-foreground">
-              getserene.health
-            </a>
-          </p>
-        </footer>
       </main>
     </div>
   );

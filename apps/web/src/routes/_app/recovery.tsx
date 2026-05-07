@@ -1,249 +1,172 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Heart, Moon, TrendingDown, TrendingUp } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowUpRight, Heart, Moon, Plug } from "lucide-react";
 import { PageTopbar } from "~/components/app/topbar";
-import { mockData } from "~/data/mock";
+import { getRecoveryFn } from "~/server/functions/data";
 
 const display = { fontFamily: "var(--font-bricolage)" } as const;
 const mono = { fontFamily: "var(--font-mono-grotesque)" } as const;
 
 export const Route = createFileRoute("/_app/recovery")({
   component: RecoveryPage,
+  loader: () => getRecoveryFn(),
 });
 
 function RecoveryPage() {
-  const { recovery, weeklyTIR } = mockData;
-
-  // Mock 30-day recovery scores
-  const scores = Array.from({ length: 30 }, (_, i) => {
-    const drift = Math.sin(i / 5) * 14 + Math.cos(i / 7) * 8;
-    return Math.max(35, Math.min(95, 65 + drift + (Math.random() - 0.5) * 6));
-  });
-
-  // Mock sleep stages
-  const stages = [
-    { label: "Awake", hours: 0.4, color: "bg-rose-500" },
-    { label: "Light", hours: 3.6, color: "bg-indigo-300" },
-    { label: "Deep", hours: 1.6, color: "bg-indigo-700" },
-    { label: "REM", hours: 1.8, color: "bg-violet-500" },
-  ];
-  const totalSleep = stages.reduce((s, x) => s + x.hours, 0);
+  const { recoveries, sleeps } = Route.useLoaderData();
+  const today = recoveries[0];
+  const lastSleep = sleeps[0];
+  const empty = recoveries.length === 0 && sleeps.length === 0;
 
   return (
     <>
       <PageTopbar
         title="Recovery"
-        meta="HRV · sleep · resting heart rate · strain"
+        meta="HRV · sleep · resting heart rate"
         windows={["7d", "30d", "90d", "1y"]}
         activeWindow="30d"
       />
       <main className="grid gap-3 px-6 py-5 lg:grid-cols-12">
-        <article className="lg:col-span-5 rounded-3xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-card to-card p-6 ring-1 ring-indigo-500/20 backdrop-blur-xl">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
-            recovery · today
-          </p>
-          <div className="mt-4 flex items-center gap-6">
-            <RecoveryRing value={recovery.score} />
-            <div>
-              <p className="text-6xl font-semibold leading-none tabular-nums" style={display}>
-                {recovery.score}
-              </p>
-              <p className="text-sm text-muted-foreground">/ 100 · ample</p>
-            </div>
-          </div>
-          <p className="mt-5 max-w-md text-sm text-muted-foreground">
-            Your nervous system has recovered well from yesterday's session. Strain capacity for
-            today: <span className="text-foreground">12 – 16</span>.
-          </p>
-        </article>
-
-        <article className="lg:col-span-7 rounded-3xl border border-border/40 bg-card/90 p-6 backdrop-blur-xl">
-          <header className="flex items-baseline justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
-                30-day recovery trend
-              </p>
-              <h3 className="mt-1 text-lg font-semibold" style={display}>
-                The line your nights tell
-              </h3>
-            </div>
-            <span className="text-xs text-muted-foreground" style={mono}>
-              avg {Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)}
-            </span>
-          </header>
-          <div className="mt-5 h-36">
-            <svg
-              viewBox={`0 0 ${scores.length * 24} 144`}
-              preserveAspectRatio="none"
-              className="size-full"
-            >
-              <line
-                x1={0}
-                x2={scores.length * 24}
-                y1={144 - (67 / 100) * 144}
-                y2={144 - (67 / 100) * 144}
-                stroke="currentColor"
-                opacity={0.2}
-                strokeDasharray="4 4"
-              />
-              <line
-                x1={0}
-                x2={scores.length * 24}
-                y1={144 - (33 / 100) * 144}
-                y2={144 - (33 / 100) * 144}
-                stroke="currentColor"
-                opacity={0.2}
-                strokeDasharray="4 4"
-              />
-              {scores.map((s, i) => (
-                <rect
-                  key={i}
-                  x={i * 24 + 4}
-                  y={144 - (s / 100) * 144}
-                  width={16}
-                  height={(s / 100) * 144}
-                  rx={3}
-                  fill={
-                    s >= 67 ? "rgb(16 185 129)" : s >= 33 ? "rgb(245 158 11)" : "rgb(244 63 94)"
-                  }
-                  opacity={0.85}
-                />
-              ))}
-            </svg>
-          </div>
-          <div
-            className="mt-3 flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground"
-            style={mono}
-          >
-            <span>−30d</span>
-            <span>−15d</span>
-            <span>today</span>
-          </div>
-        </article>
-
-        <article className="lg:col-span-7 rounded-3xl border border-border/40 bg-card/90 p-6 backdrop-blur-xl">
-          <header className="flex items-baseline justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
-                sleep · last night
-              </p>
-              <h3 className="mt-1 text-lg font-semibold" style={display}>
-                {recovery.sleep} hours · 87% efficient
-              </h3>
-            </div>
-            <span className="text-xs text-muted-foreground" style={mono}>
-              23:14 → 06:36
-            </span>
-          </header>
-          <div className="mt-5 flex h-3 overflow-hidden rounded-full">
-            {stages.map((s) => (
-              <div
-                key={s.label}
-                className={s.color}
-                style={{ width: `${(s.hours / totalSleep) * 100}%` }}
-              />
-            ))}
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {stages.map((s) => (
-              <div
-                key={s.label}
-                className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2"
-              >
-                <span className={`size-2 rounded-full ${s.color}`} />
-                <div>
-                  <p
-                    className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
-                    style={mono}
-                  >
-                    {s.label}
-                  </p>
-                  <p className="text-sm tabular-nums" style={mono}>
-                    {s.hours.toFixed(1)}h
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <aside className="lg:col-span-5 grid gap-3">
-          <Card
-            label="HRV"
-            value={`${recovery.hrv}`}
-            unit="ms"
-            delta={+4}
-            sub="7d avg 44ms"
-            icon={<Heart className="size-3.5 text-rose-500" />}
-          />
-          <Card
-            label="Resting heart rate"
-            value={`${recovery.rhr}`}
-            unit="bpm"
-            delta={-2}
-            sub="7d avg 54 bpm"
-            icon={<TrendingDown className="size-3.5 text-emerald-500" />}
-          />
-          <Card
-            label="Yesterday's strain"
-            value={recovery.strain.toFixed(1)}
-            sub="Moderate · within capacity"
-            icon={<TrendingUp className="size-3.5 text-amber-500" />}
-          />
-          <Card
-            label="Sleep debt · 7d"
-            value="−2.3h"
-            sub="catch up tonight"
-            icon={<Moon className="size-3.5 text-indigo-500" />}
-          />
-        </aside>
-
-        <article className="lg:col-span-12 rounded-3xl border border-border/40 bg-card/90 p-6 backdrop-blur-xl">
-          <header className="flex items-baseline justify-between">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
-              recovery × glucose · 7 days
+        {empty ? (
+          <article className="lg:col-span-12 rounded-3xl border border-dashed border-border/60 bg-card/60 p-10 text-center">
+            <Plug className="mx-auto size-8 text-muted-foreground" />
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight" style={display}>
+              No recovery data yet
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Connect WHOOP from the Settings → Data sources tab. WHOOP uses OAuth2; you'll need a
+              registered developer app (WHOOP_CLIENT_ID/SECRET env vars).
             </p>
-            <span className="text-xs text-muted-foreground" style={mono}>
-              are good nights driving stable days?
-            </span>
-          </header>
-          <div className="mt-5 grid grid-cols-7 gap-3">
-            {weeklyTIR.map((d, i) => {
-              const rec = scores[scores.length - 7 + i] ?? 65;
-              return (
-                <article
-                  key={d.date}
-                  className="rounded-2xl border border-border/40 bg-card/60 p-4"
+            <Link
+              to="/settings"
+              search={{ tab: "sources" }}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-sm text-background hover:bg-foreground/90"
+            >
+              Connect WHOOP <ArrowUpRight className="size-3.5" />
+            </Link>
+          </article>
+        ) : (
+          <>
+            <article className="lg:col-span-5 rounded-3xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-card to-card p-6 ring-1 ring-indigo-500/20 backdrop-blur-xl">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
+                recovery · today
+              </p>
+              {today ? (
+                <>
+                  <div className="mt-4 flex items-center gap-6">
+                    <Ring value={today.score ?? 0} />
+                    <div>
+                      <p
+                        className="text-6xl font-semibold leading-none tabular-nums"
+                        style={display}
+                      >
+                        {today.score ?? "—"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">/ 100</p>
+                    </div>
+                  </div>
+                  <p className="mt-5 text-sm text-muted-foreground">
+                    HRV {today.hrv ?? "—"} ms · resting HR {today.rhr ?? "—"} bpm
+                  </p>
+                </>
+              ) : (
+                <p className="mt-3 text-sm text-muted-foreground">No recent recovery score.</p>
+              )}
+            </article>
+
+            <article className="lg:col-span-7 rounded-3xl border border-border/40 bg-card/90 p-6 backdrop-blur-xl">
+              <header className="flex items-baseline justify-between">
+                <p
+                  className="text-xs uppercase tracking-[0.2em] text-muted-foreground"
+                  style={mono}
                 >
-                  <p
-                    className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
-                    style={mono}
-                  >
-                    {d.weekday}
-                  </p>
-                  <p className="mt-2 text-xl font-semibold tabular-nums" style={display}>
-                    {Math.round(rec)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground" style={mono}>
-                    recovery
-                  </p>
-                  <hr className="my-3 border-border/40" />
-                  <p className="text-xl font-semibold tabular-nums" style={display}>
-                    {d.inRange}%
-                  </p>
-                  <p className="text-[10px] text-muted-foreground" style={mono}>
-                    tir
-                  </p>
-                </article>
-              );
-            })}
-          </div>
-        </article>
+                  recent recovery scores
+                </p>
+                <span className="text-xs text-muted-foreground" style={mono}>
+                  {recoveries.length} days
+                </span>
+              </header>
+              <div className="mt-5 h-36">
+                <svg
+                  viewBox={`0 0 ${recoveries.length * 24} 144`}
+                  preserveAspectRatio="none"
+                  className="size-full"
+                >
+                  {recoveries.map((r, i) => {
+                    const score = r.score ?? 0;
+                    return (
+                      <rect
+                        key={i}
+                        x={i * 24 + 4}
+                        y={144 - (score / 100) * 144}
+                        width={16}
+                        height={(score / 100) * 144}
+                        rx={3}
+                        fill={
+                          score >= 67
+                            ? "rgb(16 185 129)"
+                            : score >= 33
+                              ? "rgb(245 158 11)"
+                              : "rgb(244 63 94)"
+                        }
+                        opacity={0.85}
+                      />
+                    );
+                  })}
+                </svg>
+              </div>
+            </article>
+
+            <article className="lg:col-span-7 rounded-3xl border border-border/40 bg-card/90 p-6 backdrop-blur-xl">
+              <header className="flex items-baseline justify-between">
+                <p
+                  className="text-xs uppercase tracking-[0.2em] text-muted-foreground"
+                  style={mono}
+                >
+                  last night
+                </p>
+                {lastSleep ? (
+                  <span className="text-xs text-muted-foreground" style={mono}>
+                    {Math.round(((lastSleep.durationSeconds ?? 0) / 3600) * 10) / 10}h ·{" "}
+                    {lastSleep.score ?? "—"}% performance
+                  </span>
+                ) : null}
+              </header>
+              {lastSleep ? (
+                <p className="mt-3 text-3xl font-semibold tabular-nums" style={display}>
+                  {Math.round(((lastSleep.durationSeconds ?? 0) / 3600) * 10) / 10}h
+                </p>
+              ) : (
+                <p className="mt-3 text-sm text-muted-foreground">No sleep recorded.</p>
+              )}
+            </article>
+
+            <aside className="lg:col-span-5 grid gap-3">
+              <Card
+                label="HRV"
+                value={today?.hrv ?? "—"}
+                unit="ms"
+                icon={<Heart className="size-3.5 text-rose-500" />}
+              />
+              <Card
+                label="Resting heart rate"
+                value={today?.rhr ?? "—"}
+                unit="bpm"
+                icon={<Heart className="size-3.5 text-emerald-500" />}
+              />
+              <Card
+                label="Sleeps logged · 7d"
+                value={sleeps.length.toString()}
+                icon={<Moon className="size-3.5 text-indigo-500" />}
+              />
+            </aside>
+          </>
+        )}
       </main>
     </>
   );
 }
 
-function RecoveryRing({ value }: { value: number }) {
+function Ring({ value }: { value: number }) {
   const size = 96;
   const stroke = 8;
   const r = (size - stroke) / 2;
@@ -282,15 +205,11 @@ function Card({
   label,
   value,
   unit,
-  sub,
-  delta,
   icon,
 }: {
   label: string;
-  value: string;
+  value: string | number | null;
   unit?: string;
-  sub?: string;
-  delta?: number;
   icon?: React.ReactNode;
 }) {
   return (
@@ -305,27 +224,13 @@ function Card({
         className="mt-2 flex items-baseline gap-1 text-3xl font-semibold tabular-nums"
         style={display}
       >
-        {value}
+        {value ?? "—"}
         {unit ? (
           <span className="text-sm font-normal text-muted-foreground" style={mono}>
             {unit}
           </span>
         ) : null}
-        {delta !== undefined ? (
-          <span
-            className="ml-2 text-xs tabular-nums"
-            style={{ ...mono, color: delta >= 0 ? "rgb(16 185 129)" : "rgb(244 63 94)" }}
-          >
-            {delta > 0 ? "+" : ""}
-            {delta}
-          </span>
-        ) : null}
       </p>
-      {sub ? (
-        <p className="text-xs text-muted-foreground" style={mono}>
-          {sub}
-        </p>
-      ) : null}
     </article>
   );
 }
