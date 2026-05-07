@@ -10,11 +10,9 @@ import {
   Settings,
   Share2,
 } from "lucide-react";
-import { formatRelativeTime, mockData } from "~/data/mock";
 
 const display = { fontFamily: "var(--font-bricolage)" } as const;
 const mono = { fontFamily: "var(--font-mono-grotesque)" } as const;
-const data = { fontFamily: "var(--font-mono-data)" } as const;
 
 const NAV = [
   { to: "/", label: "Today", icon: Inbox, exact: true },
@@ -34,9 +32,6 @@ const SECONDARY = [
 ];
 
 export function AppSidebar() {
-  const { weeklyTIR } = mockData;
-  const weekAvg = Math.round(weeklyTIR.reduce((s, d) => s + d.inRange, 0) / weeklyTIR.length);
-
   return (
     <aside className="sticky top-0 hidden h-dvh flex-col gap-4 border-r border-border/40 bg-card/60 px-3 py-4 backdrop-blur-xl lg:flex">
       <div className="flex items-center gap-2 px-1.5">
@@ -54,21 +49,6 @@ export function AppSidebar() {
           <Bell className="size-3.5" />
         </button>
       </div>
-
-      <Link
-        to="/glucose"
-        className="block rounded-xl bg-muted/50 px-3 py-2 text-xs transition-colors hover:bg-muted/70"
-      >
-        <p className="uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
-          This week
-        </p>
-        <p className="mt-1 text-2xl font-medium tabular-nums" style={display}>
-          {weekAvg}%
-        </p>
-        <p className="text-muted-foreground" style={mono}>
-          avg in range
-        </p>
-      </Link>
 
       <nav className="space-y-0.5 text-sm">
         {NAV.map(({ to, label, icon: Icon, exact }) => (
@@ -132,24 +112,17 @@ export function AppSidebar() {
             manage
           </Link>
         </div>
-        <ul className="mt-2 space-y-1" style={data}>
-          <li className="flex justify-between">
-            <span>libre</span>
-            <span className="text-emerald-600 dark:text-emerald-400">● ok</span>
-          </li>
-          <li className="flex justify-between">
-            <span>whoop</span>
-            <span className="text-emerald-600 dark:text-emerald-400">● ok</span>
-          </li>
-          <li className="flex justify-between">
-            <span>garmin</span>
-            <span className="text-amber-600 dark:text-amber-400">● syncing</span>
-          </li>
-          <li className="flex justify-between">
-            <span>last sync</span>
-            <span className="text-muted-foreground">{formatRelativeTime(Date.now() - 60_000)}</span>
-          </li>
-        </ul>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Connect Libre, WHOOP, and Garmin from{" "}
+          <Link
+            to="/settings"
+            search={{ tab: "sources" }}
+            className="underline hover:text-foreground"
+          >
+            settings
+          </Link>
+          .
+        </p>
       </div>
     </aside>
   );

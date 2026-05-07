@@ -1,17 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight } from "lucide-react";
-import { Sparkline } from "~/components/charts/sparkline";
+import { ArrowUpRight, Plug } from "lucide-react";
 import { PageTopbar } from "~/components/app/topbar";
-import { Map, MapControls, MapMarker, MapRoute, MarkerContent } from "~/components/ui/map";
+import { Sparkline } from "~/components/charts/sparkline";
 import {
   formatClock,
   formatDistance,
   formatDuration,
   formatGlucose,
   formatPace,
-  mockData,
-  ROUTE_CENTER,
-} from "~/data/mock";
+  formatRelativeTime,
+} from "~/lib/format";
+import { getDashboardFn } from "~/server/functions/data";
 
 const display = { fontFamily: "var(--font-bricolage)" } as const;
 const mono = { fontFamily: "var(--font-mono-grotesque)" } as const;
@@ -19,11 +18,21 @@ const data = { fontFamily: "var(--font-mono-data)" } as const;
 
 export const Route = createFileRoute("/_app/")({
   component: Dashboard,
+  loader: () => getDashboardFn(),
 });
 
 function Dashboard() {
-  const { glucose, tir, today, recovery, workout, recentWorkouts, treatments } = mockData;
-  const coords: [number, number][] = mockData.route.map((p) => [p.lng, p.lat]);
+  const d = Route.useLoaderData();
+  const hasGlucose = d.glucose.current != null;
+  const hasReadings = d.glucose.readings.length > 0;
+  const hasRecovery = d.recovery != null;
+  const hasActivity = d.todayActivity != null;
+  const noSourcesAtAll =
+    !hasGlucose &&
+    !hasRecovery &&
+    !hasActivity &&
+    d.recentActivities.length === 0 &&
+    d.treatments.length === 0;
 
   return (
     <>
@@ -34,129 +43,117 @@ function Dashboard() {
         activeWindow="24h"
       />
       <main className="grid gap-3 px-6 py-5 lg:grid-cols-12">
+        {noSourcesAtAll ? (
+          <div className="lg:col-span-12 rounded-3xl border border-dashed border-border/60 bg-card/60 p-10 text-center">
+            <Plug className="mx-auto size-8 text-muted-foreground" />
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight" style={display}>
+              Connect a data source to see real numbers
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              serene reads from LibreLinkUp, WHOOP, and Garmin Connect. Glucose lights up first;
+              recovery and activity follow once their syncs land.
+            </p>
+            <Link
+              to="/settings"
+              search={{ tab: "sources" }}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-sm text-background hover:bg-foreground/90"
+            >
+              Connect sources <ArrowUpRight className="size-3.5" />
+            </Link>
+          </div>
+        ) : null}
+
         <article className="lg:col-span-5 rounded-3xl border border-border/40 bg-card/90 p-6 backdrop-blur-xl">
           <div className="flex items-baseline justify-between">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
               current glucose
             </p>
-            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-300">
-              stable · 4 min ago
+            <span className="text-xs text-muted-foreground" style={mono}>
+              {d.glucose.lastReadingAt ? formatRelativeTime(d.glucose.lastReadingAt) : "no data"}
             </span>
           </div>
-          <p className="mt-3 text-7xl font-semibold leading-[0.85] tabular-nums" style={display}>
-            {formatGlucose(glucose.current)}
-          </p>
-          <p className="text-sm text-muted-foreground">mmol/L · target 3.9 – 10.0</p>
-          <div className="mt-5 h-24 text-emerald-500/85">
-            <Sparkline
-              data={glucose.last24h}
-              width={400}
-              height={96}
-              showRangeBand
-              strokeColor="currentColor"
-              bandColor="hsl(150 60% 55%)"
-              className="size-full"
-            />
-          </div>
-          <Link
-            to="/glucose"
-            className="mt-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            style={mono}
-          >
-            see all glucose data <ArrowUpRight className="size-3" />
-          </Link>
+          {hasGlucose ? (
+            <>
+              <p
+                className="mt-3 text-7xl font-semibold leading-[0.85] tabular-nums"
+                style={display}
+              >
+                {formatGlucose(d.glucose.current!)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                mmol/L · {d.glucose.trend ?? "—"} · target 3.9 – 10.0
+              </p>
+              {hasReadings ? (
+                <div className="mt-5 h-24 text-emerald-500/85">
+                  <Sparkline
+                    data={d.glucose.readings}
+                    width={400}
+                    height={96}
+                    showRangeBand
+                    strokeColor="currentColor"
+                    bandColor="hsl(150 60% 55%)"
+                    className="size-full"
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <EmptyHint label="Connect LibreLinkUp" />
+          )}
         </article>
 
         <article className="lg:col-span-7 grid gap-3 sm:grid-cols-2">
           <Stat
             tone="emerald"
             label="In range"
-            value={`${tir.inRange}%`}
-            sub={`${tir.below}% low · ${tir.above}% high`}
-            bar={tir.inRange}
+            value={hasGlucose ? `${d.tir.inRange}%` : "—"}
+            sub={hasGlucose ? `${d.tir.below}% low · ${d.tir.above}% high` : "no glucose yet"}
+            bar={hasGlucose ? d.tir.inRange : undefined}
           />
           <Stat
             tone="indigo"
             label="Recovery"
-            value={`${recovery.score}`}
-            unit="/100"
-            sub={`HRV ${recovery.hrv}ms · ${recovery.sleep}h sleep`}
-            bar={recovery.score}
+            value={hasRecovery ? `${d.recovery!.score}` : "—"}
+            unit={hasRecovery ? "/100" : undefined}
+            sub={
+              hasRecovery
+                ? `HRV ${d.recovery!.hrv}ms · ${d.recovery!.sleep}h sleep`
+                : "connect WHOOP"
+            }
+            bar={hasRecovery ? d.recovery!.score : undefined}
           />
           <Stat
             tone="rose"
             label="Strain"
-            value={recovery.strain.toFixed(1)}
-            sub={`avg HR ${workout.avgHr}`}
+            value={hasRecovery ? d.recovery!.strain.toFixed(1) : "—"}
+            sub={hasActivity ? `avg HR ${d.todayActivity!.avgHr}` : "no workout today"}
           />
           <Stat
             tone="amber"
             label="Today's run"
-            value={formatDistance(workout.distance)}
-            sub={`${formatDuration(workout.duration)} · ${formatPace(workout.duration, workout.distance)}`}
+            value={hasActivity ? formatDistance(d.todayActivity!.distance) : "—"}
+            sub={
+              hasActivity
+                ? `${formatDuration(d.todayActivity!.duration)} · ${formatPace(d.todayActivity!.duration, d.todayActivity!.distance)}`
+                : "connect Garmin"
+            }
           />
         </article>
 
-        <article className="lg:col-span-7 overflow-hidden rounded-3xl border border-border/40 bg-card/90 backdrop-blur-xl">
+        <article className="lg:col-span-7 rounded-3xl border border-border/40 bg-card/90 backdrop-blur-xl">
           <header className="flex items-baseline justify-between p-5 pb-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
-                route · today
-              </p>
-              <h3 className="mt-1 text-xl font-semibold tracking-tight" style={display}>
-                Vondelpark loop
-              </h3>
-            </div>
-            <Link
-              to="/activity/$id"
-              params={{ id: workout.id }}
-              className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-3 py-1.5 text-xs hover:bg-muted"
-            >
-              Open run <ArrowUpRight className="size-3" />
-            </Link>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
+              today's stats
+            </p>
+            <span className="text-xs text-muted-foreground" style={mono}>
+              {hasReadings ? `${d.today.readings} readings · 24h` : "—"}
+            </span>
           </header>
-          <div className="aspect-[16/8]">
-            <Map center={ROUTE_CENTER} zoom={12.4} className="size-full">
-              <MapRoute coordinates={coords} color="#10b981" width={3.5} opacity={0.95} />
-              <MapMarker longitude={coords[0]![0]} latitude={coords[0]![1]}>
-                <MarkerContent>
-                  <span className="grid size-6 place-items-center rounded-full bg-emerald-500 text-[10px] font-bold text-white shadow ring-2 ring-background">
-                    S
-                  </span>
-                </MarkerContent>
-              </MapMarker>
-              <MapMarker longitude={coords.at(-1)![0]} latitude={coords.at(-1)![1]}>
-                <MarkerContent>
-                  <span className="grid size-6 place-items-center rounded-full bg-violet-500 text-[10px] font-bold text-white shadow ring-2 ring-background">
-                    F
-                  </span>
-                </MarkerContent>
-              </MapMarker>
-              <MapControls position="top-right" />
-            </Map>
-          </div>
-          <div className="grid grid-cols-4 divide-x divide-border/40 text-sm">
-            {[
-              ["pace", formatPace(workout.duration, workout.distance)],
-              ["time", formatDuration(workout.duration)],
-              ["distance", formatDistance(workout.distance)],
-              ["ΔBG", `${workout.glucoseDelta.toFixed(1)}`, true],
-            ].map(([k, v, accent]) => (
-              <div key={k as string} className="px-5 py-4">
-                <p
-                  className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
-                  style={mono}
-                >
-                  {k}
-                </p>
-                <p
-                  className={`mt-1 tabular-nums ${accent ? "text-emerald-600 dark:text-emerald-400" : ""}`}
-                  style={mono}
-                >
-                  {v}
-                </p>
-              </div>
-            ))}
+          <div className="grid grid-cols-4 gap-0 divide-x divide-border/40 text-sm">
+            <Cell label="Average" value={hasGlucose ? `${formatGlucose(d.today.avg)} mmol` : "—"} />
+            <Cell label="GMI" value={hasGlucose ? d.today.gmi.toFixed(1) : "—"} />
+            <Cell label="Std dev" value={hasGlucose ? d.today.sd.toFixed(1) : "—"} />
+            <Cell label="CV" value={hasGlucose ? `${d.today.cv}%` : "—"} />
           </div>
         </article>
 
@@ -173,28 +170,34 @@ function Dashboard() {
               all events →
             </Link>
           </header>
-          <ul className="divide-y divide-border/40">
-            {treatments.slice(0, 7).map((t) => (
-              <li
-                key={t.t}
-                className="grid items-center gap-3 px-5 py-2 text-sm"
-                style={{ gridTemplateColumns: "55px 22px 1fr auto" }}
-              >
-                <span className="text-xs tabular-nums text-muted-foreground" style={mono}>
-                  {formatClock(t.t)}
-                </span>
-                <span
-                  className={`grid size-5 place-items-center rounded-full text-[10px] font-medium ${kindBadge(t.kind)}`}
+          {d.treatments.length > 0 ? (
+            <ul className="divide-y divide-border/40">
+              {d.treatments.slice(0, 7).map((t) => (
+                <li
+                  key={t.t}
+                  className="grid items-center gap-3 px-5 py-2 text-sm"
+                  style={{ gridTemplateColumns: "55px 22px 1fr auto" }}
                 >
-                  {kindLetter(t.kind)}
-                </span>
-                <span className="truncate">{t.label}</span>
-                <span className="text-xs tabular-nums text-muted-foreground" style={mono}>
-                  {t.detail ?? ""}
-                </span>
-              </li>
-            ))}
-          </ul>
+                  <span className="text-xs tabular-nums text-muted-foreground" style={mono}>
+                    {formatClock(t.t)}
+                  </span>
+                  <span
+                    className={`grid size-5 place-items-center rounded-full text-[10px] font-medium ${kindBadge(t.kind)}`}
+                  >
+                    {kindLetter(t.kind)}
+                  </span>
+                  <span className="truncate">{t.label}</span>
+                  <span className="text-xs tabular-nums text-muted-foreground" style={mono}>
+                    {t.detail ?? ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="px-5 py-6 text-sm text-muted-foreground">
+              No treatments logged today. Manual logging lands in v0.2.
+            </p>
+          )}
         </article>
 
         <article className="lg:col-span-12 rounded-3xl border border-border/40 bg-card/90 backdrop-blur-xl">
@@ -210,57 +213,47 @@ function Dashboard() {
               see all →
             </Link>
           </header>
-          <table className="w-full text-sm" style={data}>
-            <thead className="border-y border-border/40 text-xs text-muted-foreground">
-              <tr>
-                {["when", "sport", "distance", "duration", "pace", "avg HR", "strain", "ΔBG"].map(
-                  (h) => (
+          {d.recentActivities.length > 0 ? (
+            <table className="w-full text-sm" style={data}>
+              <thead className="border-y border-border/40 text-xs text-muted-foreground">
+                <tr>
+                  {["when", "sport", "distance", "duration", "pace"].map((h) => (
                     <th key={h} className="px-5 py-2 text-left font-normal">
                       {h}
                     </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {recentWorkouts.map((w) => (
-                <tr
-                  key={w.id}
-                  className="border-b border-border/30 last:border-b-0 hover:bg-muted/40"
-                >
-                  <td className="px-5 py-2 text-muted-foreground">
-                    <Link
-                      to="/activity/$id"
-                      params={{ id: w.id }}
-                      className="hover:text-foreground"
-                    >
-                      {w.date}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-2">{w.sport}</td>
-                  <td className="px-5 py-2 tabular-nums">{formatDistance(w.distance)}</td>
-                  <td className="px-5 py-2 tabular-nums">{formatDuration(w.duration)}</td>
-                  <td className="px-5 py-2 tabular-nums">{formatPace(w.duration, w.distance)}</td>
-                  <td className="px-5 py-2 tabular-nums">{w.avgHr}</td>
-                  <td className="px-5 py-2 tabular-nums">{w.strain.toFixed(1)}</td>
-                  <td
-                    className="px-5 py-2 text-right tabular-nums"
-                    style={{ color: w.glucoseDelta < 0 ? "rgb(16 185 129)" : "rgb(244 63 94)" }}
-                  >
-                    {w.glucoseDelta > 0 ? "+" : ""}
-                    {w.glucoseDelta.toFixed(1)}
-                  </td>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {d.recentActivities.map((w) => (
+                  <tr
+                    key={w.id}
+                    className="border-b border-border/30 last:border-b-0 hover:bg-muted/40"
+                  >
+                    <td className="px-5 py-2 text-muted-foreground">
+                      <Link
+                        to="/activity/$id"
+                        params={{ id: w.id }}
+                        className="hover:text-foreground"
+                      >
+                        {w.date}
+                      </Link>
+                    </td>
+                    <td className="px-5 py-2">{w.sport}</td>
+                    <td className="px-5 py-2 tabular-nums">{formatDistance(w.distance)}</td>
+                    <td className="px-5 py-2 tabular-nums">{formatDuration(w.duration)}</td>
+                    <td className="px-5 py-2 tabular-nums">{formatPace(w.duration, w.distance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="px-5 py-6 text-sm text-muted-foreground">
+              No activities yet. Connect Garmin to pull recent runs.
+            </p>
+          )}
         </article>
       </main>
-
-      <footer className="px-6 pb-6 text-xs text-muted-foreground" style={mono}>
-        avg today {formatGlucose(today.avg)} mmol/L · {today.readings} readings · gmi{" "}
-        {today.gmi.toFixed(1)} · cv {today.cv}%
-      </footer>
     </>
   );
 }
@@ -276,9 +269,9 @@ function Stat({
   tone: "emerald" | "indigo" | "rose" | "amber";
   label: string;
   value: string;
-  unit?: string;
-  sub?: string;
-  bar?: number;
+  unit?: string | undefined;
+  sub?: string | undefined;
+  bar?: number | undefined;
 }) {
   const ring = {
     emerald: "ring-emerald-500/30",
@@ -319,6 +312,31 @@ function Stat({
         </div>
       ) : null}
     </article>
+  );
+}
+
+function Cell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-5 py-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
+        {label}
+      </p>
+      <p className="mt-1 text-lg tabular-nums" style={mono}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function EmptyHint({ label }: { label: string }) {
+  return (
+    <Link
+      to="/settings"
+      search={{ tab: "sources" }}
+      className="mt-3 inline-flex items-center gap-1 rounded-full bg-foreground px-3 py-1 text-xs text-background hover:bg-foreground/90"
+    >
+      {label} <ArrowUpRight className="size-3" />
+    </Link>
   );
 }
 

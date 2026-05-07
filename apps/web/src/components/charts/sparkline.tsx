@@ -1,4 +1,4 @@
-import type { GlucosePoint } from "~/data/mock";
+import type { GlucosePoint } from "~/lib/format";
 
 type Props = {
   data: ReadonlyArray<GlucosePoint>;
