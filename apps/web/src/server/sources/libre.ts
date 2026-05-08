@@ -112,6 +112,14 @@ async function postLogin(
     const msg = json.error?.message ?? json.message ?? text.slice(0, 160);
     throw new Error(`LibreLinkUp login HTTP ${res.status}: ${msg}`);
   }
+  // status === 2 is the API's "bad credentials" code on a 200 OK body.
+  if (json.status === 2) {
+    throw new Error(
+      "LibreLinkUp: incorrect email or password. Make sure you're using your " +
+        "LibreLinkUp *follower* credentials (the app family members use), not " +
+        "your LibreLink patient credentials — they are separate accounts.",
+    );
+  }
   return json;
 }
 
@@ -355,10 +363,20 @@ export const libreSource: Source<Payload> = {
   meta: {
     id: "libre",
     name: "LibreLinkUp",
-    description: "FreeStyle Libre 3 via the LibreLinkUp follower API. Polls every 1 minute.",
+    description:
+      "FreeStyle Libre 3 via the LibreLinkUp follower API. Polls every 1 minute. " +
+      "Requires a LibreLinkUp follower account (separate from your LibreLink patient account) — " +
+      "in the LibreLink app, invite a follower with any email of yours, then create the " +
+      "follower account from that invitation and use those credentials here.",
     authType: "credentials",
     fields: [
-      { key: "email", label: "LibreLinkUp email", type: "email", required: true },
+      {
+        key: "email",
+        label: "LibreLinkUp follower email",
+        type: "email",
+        required: true,
+        hint: "Not your LibreLink patient email — the email tied to a follower account.",
+      },
       { key: "password", label: "Password", type: "password", required: true },
       {
         key: "region",
