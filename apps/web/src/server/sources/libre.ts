@@ -6,10 +6,12 @@ import type { Source, SourceContext } from "./types";
 
 const LIBRE_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
+  "cache-control": "no-cache",
+  connection: "Keep-Alive",
+  "accept-encoding": "gzip",
   product: "llu.android",
-  version: "4.7.0",
-  "User-Agent":
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 serene",
+  version: "4.12.0",
+  "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) LibreLinkUp/4.12.0",
 };
 
 const REGION_HOSTS: Record<string, string> = {
@@ -75,8 +77,18 @@ function pickAccountIdHash(user?: LoginUser): string | undefined {
 function authHeaders(payload: Payload): Record<string, string> {
   const h: Record<string, string> = { ...LIBRE_HEADERS };
   if (payload.authToken) h.authorization = `Bearer ${payload.authToken}`;
-  if (payload.accountIdHash) h["account-id"] = payload.accountIdHash;
+  // Newer LibreLinkUp API builds reject pre-login requests that don't carry an
+  // account-id header. We send a deterministic SHA256(email) hash from the
+  // first request; once login returns the user id we replace it with
+  // SHA256(user.id) for /llu/connections and friends.
+  h["account-id"] = payload.accountIdHash ?? sha256Hex(payload.email.toLowerCase());
   return h;
+}
+
+function describeData(data: unknown): string {
+  if (!data || typeof data !== "object") return typeof data;
+  const keys = Object.keys(data as Record<string, unknown>);
+  return keys.length ? `{${keys.join(",")}}` : "{}";
 }
 
 async function postLogin(
@@ -174,10 +186,19 @@ async function login(
   const token = json.data?.authTicket?.token;
   const expires = json.data?.authTicket?.expires;
   if (!token || !expires) {
-    const stepHint = json.data?.step ? ` (stuck on step "${json.data.step.type}")` : "";
+    const stepHint = json.data?.step ? `step="${json.data.step.type}"` : "";
+    const apiMsg = json.error?.message ?? json.message;
+    const detail = [
+      `status=${json.status ?? "?"}`,
+      `data=${describeData(json.data)}`,
+      stepHint,
+      apiMsg ? `message="${apiMsg}"` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
     throw new Error(
-      `LibreLinkUp login: missing authTicket in response${stepHint}. ` +
-        `Try logging into the LibreView website and accepting any pending terms, then retry.`,
+      `LibreLinkUp login: no authTicket (${detail}). ` +
+        `If you haven't yet, accept any pending terms in the LibreLinkUp app and retry.`,
     );
   }
   return {
