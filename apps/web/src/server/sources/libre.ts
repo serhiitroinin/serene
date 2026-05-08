@@ -4,215 +4,120 @@ import { z } from "zod";
 import { glucoseReadings } from "../db/schema";
 import type { Source, SourceContext } from "./types";
 
-const LIBRE_HEADERS: Record<string, string> = {
-  "Content-Type": "application/json",
+// Header set ported verbatim from luff's working LibreLinkUp client. Deviations
+// from this — newer version strings, custom User-Agent, preemptive Account-Id —
+// have been observed to trigger silent credential rejection by the API's
+// bot-protection layer.
+const LLU_HEADERS: Record<string, string> = {
+  product: "llu.android",
+  version: "4.16.0",
+  "content-type": "application/json",
   "cache-control": "no-cache",
   connection: "Keep-Alive",
-  "accept-encoding": "gzip",
-  product: "llu.android",
-  version: "4.12.0",
-  "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) LibreLinkUp/4.12.0",
-};
-
-const REGION_HOSTS: Record<string, string> = {
-  EU: "api-eu.libreview.io",
-  EU2: "api-eu2.libreview.io",
-  US: "api-us.libreview.io",
-  AU: "api-au.libreview.io",
-  AE: "api-ae.libreview.io",
-  AP: "api-ap.libreview.io",
-  CA: "api-ca.libreview.io",
-  DE: "api-de.libreview.io",
-  FR: "api-fr.libreview.io",
-  IN: "api-in.libreview.io",
-  JP: "api-jp.libreview.io",
-  LA: "api-la.libreview.io",
-  RU: "api-ru.libreview.io",
 };
 
 const DEFAULT_REGION = "EU";
+
+const REGION_OPTIONS = [
+  "EU",
+  "EU2",
+  "US",
+  "AU",
+  "AE",
+  "AP",
+  "CA",
+  "DE",
+  "FR",
+  "IN",
+  "JP",
+  "LA",
+  "RU",
+] as const;
+
+function apiBase(region: string): string {
+  return `https://api-${region.toLowerCase()}.libreview.io`;
+}
 
 const payloadSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
   region: z.string().default(DEFAULT_REGION),
+  apiBase: z.string().optional(),
   authToken: z.string().optional(),
   authExpires: z.number().optional(),
-  accountIdHash: z.string().optional(),
+  accountHash: z.string().optional(),
   patientId: z.string().optional(),
 });
 
 type Payload = z.infer<typeof payloadSchema>;
 
-type AuthTicket = { token: string; expires: number };
-
-type LoginUser = { id?: string; accountId?: string };
-
 type LoginResponse = {
   status?: number;
-  message?: string;
   error?: { message?: string };
   data?: {
-    authTicket?: { token?: string; expires?: number };
     redirect?: boolean;
     region?: string;
-    user?: LoginUser;
-    step?: { type?: string; componentName?: string };
+    authTicket?: { token?: string; expires?: number; duration?: number };
+    user?: { id?: string };
   };
 };
-
-function host(region: string): string {
-  return REGION_HOSTS[region] ?? REGION_HOSTS[DEFAULT_REGION]!;
-}
 
 function sha256Hex(s: string): string {
   return createHash("sha256").update(s).digest("hex");
 }
 
-function pickAccountIdHash(user?: LoginUser): string | undefined {
-  const id = user?.id ?? user?.accountId;
-  return id ? sha256Hex(id) : undefined;
-}
-
-function authHeaders(payload: Payload): Record<string, string> {
-  const h: Record<string, string> = { ...LIBRE_HEADERS };
-  if (payload.authToken) h.authorization = `Bearer ${payload.authToken}`;
-  // Newer LibreLinkUp API builds reject pre-login requests that don't carry an
-  // account-id header. We send a deterministic SHA256(email) hash from the
-  // first request; once login returns the user id we replace it with
-  // SHA256(user.id) for /llu/connections and friends.
-  h["account-id"] = payload.accountIdHash ?? sha256Hex(payload.email.toLowerCase());
-  return h;
-}
-
-function describeData(data: unknown): string {
-  if (!data || typeof data !== "object") return typeof data;
-  const keys = Object.keys(data as Record<string, unknown>);
-  return keys.length ? `{${keys.join(",")}}` : "{}";
-}
-
-async function postLogin(
-  payload: Payload,
-  body: Record<string, unknown> = { email: payload.email, password: payload.password },
-): Promise<LoginResponse> {
-  const url = `https://${host(payload.region)}/llu/auth/login`;
-  const res = await fetch(url, {
+async function postLogin(url: string, email: string, password: string): Promise<LoginResponse> {
+  const res = await fetch(`${url}/llu/auth/login`, {
     method: "POST",
-    headers: authHeaders(payload),
-    body: JSON.stringify(body),
+    headers: LLU_HEADERS,
+    body: JSON.stringify({ email, password }),
   });
-  const text = await res.text();
-  let json: LoginResponse;
-  try {
-    json = JSON.parse(text) as LoginResponse;
-  } catch {
-    throw new Error(`LibreLinkUp login HTTP ${res.status}: ${text.slice(0, 160)}`);
-  }
-  if (!res.ok) {
-    const msg = json.error?.message ?? json.message ?? text.slice(0, 160);
-    throw new Error(`LibreLinkUp login HTTP ${res.status}: ${msg}`);
-  }
-  // status === 2 is the API's "bad credentials" code on a 200 OK body.
-  if (json.status === 2) {
-    throw new Error(
-      "LibreLinkUp: incorrect email or password. Make sure you're using your " +
-        "LibreLinkUp *follower* credentials (the app family members use), not " +
-        "your LibreLink patient credentials — they are separate accounts.",
-    );
-  }
-  return json;
+  return (await res.json()) as LoginResponse;
 }
 
-async function continueStep(step: string, payload: Payload): Promise<LoginResponse> {
-  // The LibreLinkUp ToU / consent flow expects a POST to
-  // /llu/auth/continue/{step} with the in-flight bearer + account-id headers.
-  const url = `https://${host(payload.region)}/llu/auth/continue/${step}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: authHeaders(payload),
-    body: JSON.stringify({}),
-  });
-  const text = await res.text();
-  let json: LoginResponse;
-  try {
-    json = JSON.parse(text) as LoginResponse;
-  } catch {
-    throw new Error(`LibreLinkUp continue/${step} HTTP ${res.status}: ${text.slice(0, 160)}`);
-  }
-  if (!res.ok) {
-    const msg = json.error?.message ?? json.message ?? text.slice(0, 160);
-    throw new Error(`LibreLinkUp continue/${step} HTTP ${res.status}: ${msg}`);
-  }
-  return json;
-}
+async function login(initial: Payload): Promise<Payload> {
+  const { email, password } = initial;
+  let url = initial.apiBase ?? apiBase(initial.region);
 
-async function login(
-  initial: Payload,
-): Promise<{ ticket: AuthTicket; accountIdHash: string | undefined; region: string }> {
-  let payload = initial;
-  let json = await postLogin(payload);
+  let body = await postLogin(url, email, password);
 
-  // Handle region redirect (e.g., EU vs EU2)
-  if (json.data?.redirect && json.data.region) {
-    payload = { ...payload, region: json.data.region.toUpperCase() };
-    json = await postLogin(payload);
-  }
-
-  // Capture account-id hash early so the continue/* step is authenticated.
-  let accountIdHash = pickAccountIdHash(json.data?.user);
-
-  // Bearer token is sometimes present even on the step response so we can
-  // POST the continue endpoint authenticated. Carry it forward.
-  if (json.data?.authTicket?.token) {
-    payload = {
-      ...payload,
-      authToken: json.data.authTicket.token,
-      authExpires: (json.data.authTicket.expires ?? 0) * 1000,
-      accountIdHash,
-    };
-  } else {
-    payload = { ...payload, accountIdHash };
-  }
-
-  // Walk through any number of step screens (tou, pp, etc.). Bound the loop
-  // so a malformed response can't hang the connect flow.
-  let stepCount = 0;
-  while (json.data?.step?.type && stepCount < 5) {
-    stepCount++;
-    json = await continueStep(json.data.step.type, payload);
-    accountIdHash = pickAccountIdHash(json.data?.user) ?? accountIdHash;
-    if (json.data?.authTicket?.token) {
-      payload = {
-        ...payload,
-        authToken: json.data.authTicket.token,
-        authExpires: (json.data.authTicket.expires ?? 0) * 1000,
-        accountIdHash,
-      };
+  // Region redirect — API returns lowercase 2-letter region; build the host directly.
+  if (body.data?.redirect && body.data.region) {
+    const region = body.data.region;
+    if (!/^[a-z]{2,3}$/i.test(region)) {
+      throw new Error(`LibreLinkUp: invalid region code from API: ${region}`);
     }
+    url = `https://api-${region.toLowerCase()}.libreview.io`;
+    body = await postLogin(url, email, password);
   }
 
-  const token = json.data?.authTicket?.token;
-  const expires = json.data?.authTicket?.expires;
-  if (!token || !expires) {
-    const stepHint = json.data?.step ? `step="${json.data.step.type}"` : "";
-    const apiMsg = json.error?.message ?? json.message;
-    const detail = [
-      `status=${json.status ?? "?"}`,
-      `data=${describeData(json.data)}`,
-      stepHint,
-      apiMsg ? `message="${apiMsg}"` : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
-    throw new Error(
-      `LibreLinkUp login: no authTicket (${detail}). ` +
-        `If you haven't yet, accept any pending terms in the LibreLinkUp app and retry.`,
-    );
+  switch (body.status) {
+    case 0:
+      break;
+    case 2:
+      throw new Error("LibreLinkUp login failed: bad credentials");
+    case 4:
+      throw new Error(
+        "LibreLinkUp login failed: open the LibreLinkUp app and accept the Terms of Use first",
+      );
+    default:
+      throw new Error(
+        `LibreLinkUp login failed: ${body.error?.message ?? `unknown error (status: ${body.status})`}`,
+      );
   }
+
+  const token = body.data?.authTicket?.token;
+  const expires = body.data?.authTicket?.expires;
+  const userId = body.data?.user?.id;
+  if (!token || !expires) throw new Error("LibreLinkUp login: no token in response");
+  if (!userId) throw new Error("LibreLinkUp login: no user ID in response");
+
   return {
-    ticket: { token, expires: expires * 1000 },
-    accountIdHash,
-    region: payload.region,
+    ...initial,
+    apiBase: url,
+    authToken: token,
+    authExpires: expires * 1000,
+    accountHash: sha256Hex(userId),
   };
 }
 
@@ -221,40 +126,42 @@ async function ensureAuthenticated(payload: Payload): Promise<Payload> {
   if (
     payload.authToken &&
     payload.authExpires &&
-    payload.accountIdHash &&
+    payload.accountHash &&
+    payload.apiBase &&
     payload.authExpires - margin > Date.now()
   ) {
     return payload;
   }
-  const fresh = await login(payload);
-  return {
-    ...payload,
-    region: fresh.region,
-    authToken: fresh.ticket.token,
-    authExpires: fresh.ticket.expires,
-    accountIdHash: fresh.accountIdHash,
-  };
+  return login(payload);
 }
 
-async function api<T>(path: string, payload: Payload): Promise<T> {
-  const res = await fetch(`https://${host(payload.region)}${path}`, {
-    method: "GET",
-    headers: authHeaders(payload),
+async function apiGet<T>(path: string, payload: Payload): Promise<T> {
+  if (!payload.authToken || !payload.accountHash || !payload.apiBase) {
+    throw new Error("LibreLinkUp: cannot call API before login");
+  }
+  const res = await fetch(`${payload.apiBase}${path}`, {
+    headers: {
+      ...LLU_HEADERS,
+      Authorization: `Bearer ${payload.authToken}`,
+      "Account-Id": payload.accountHash,
+    },
   });
   const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`LibreLinkUp ${path} HTTP ${res.status}: ${text.slice(0, 160)}`);
-  }
+  if (!res.ok) throw new Error(`LibreLinkUp ${path} HTTP ${res.status}: ${text.slice(0, 160)}`);
   return JSON.parse(text) as T;
 }
 
 async function fetchPatientId(payload: Payload): Promise<string> {
-  const json = await api<{ data?: ReadonlyArray<{ patientId?: string }> }>(
+  const json = await apiGet<{ data?: ReadonlyArray<{ patientId?: string }> }>(
     "/llu/connections",
     payload,
   );
   const id = json.data?.[0]?.patientId;
-  if (!id) throw new Error("LibreLinkUp: no connections found for this account");
+  if (!id) {
+    throw new Error(
+      "LibreLinkUp: no connected patients found. Set up sharing in the LibreLinkUp app first.",
+    );
+  }
   return id;
 }
 
@@ -299,7 +206,7 @@ async function fetchReadings(
   payload: Payload,
 ): Promise<{ current: LibreReading | null; history: ReadonlyArray<LibreReading> }> {
   const patientId = payload.patientId ?? (await fetchPatientId(payload));
-  const json = await api<{
+  const json = await apiGet<{
     data?: {
       connection?: { glucoseMeasurement?: LibreReading };
       graphData?: ReadonlyArray<LibreReading>;
@@ -383,25 +290,17 @@ export const libreSource: Source<Payload> = {
         label: "Region",
         type: "select",
         required: true,
-        options: Object.keys(REGION_HOSTS).map((r) => ({ value: r, label: r })),
-        hint: "Use the region your Libre app is registered in.",
+        options: REGION_OPTIONS.map((r) => ({ value: r, label: r })),
+        hint: "Use the region your Libre app is registered in. The API auto-redirects if wrong.",
       },
     ],
   },
   payloadSchema,
   authenticate: async (raw) => {
     const parsed = payloadSchema.parse(raw);
-    const { ticket, accountIdHash, region } = await login(parsed);
-    let next: Payload = {
-      ...parsed,
-      region,
-      authToken: ticket.token,
-      authExpires: ticket.expires,
-      accountIdHash,
-    };
-    const id = await fetchPatientId(next);
-    next = { ...next, patientId: id };
-    return { payload: next };
+    const authed = await login(parsed);
+    const id = await fetchPatientId(authed);
+    return { payload: { ...authed, patientId: id } };
   },
   sync: syncLibre,
   syncTasks: [
