@@ -418,3 +418,58 @@ export const getGlucoseTraceFn = createServerFn({ method: "GET" }).handler(async
     .all();
   return rows.map((r) => ({ t: r.timestamp.getTime(), v: r.valueMmol }));
 });
+
+// AGP — Ambulatory Glucose Profile. Bin readings by time-of-day across the
+// last 14 days; report the 5/25/50/75/95 percentile per bin. The conventional
+// clinical view; not a prediction.
+function percentile(sorted: ReadonlyArray<number>, p: number): number {
+  if (sorted.length === 0) return 0;
+  const idx = (p / 100) * (sorted.length - 1);
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo]!;
+  const frac = idx - lo;
+  return sorted[lo]! * (1 - frac) + sorted[hi]! * frac;
+}
+
+export const getAgpFn = createServerFn({ method: "GET" }).handler(async () => {
+  const db = getDb();
+  const userId = getOwnerId();
+  const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const rows = db
+    .select({ t: glucoseReadings.timestamp, v: glucoseReadings.valueMmol })
+    .from(glucoseReadings)
+    .where(and(eq(glucoseReadings.userId, userId), gte(glucoseReadings.timestamp, since)))
+    .all();
+
+  // 96 bins × 15 minutes = full day. Each bin → list of values.
+  const BIN_MIN = 15;
+  const BIN_COUNT = (24 * 60) / BIN_MIN;
+  const bins: number[][] = Array.from({ length: BIN_COUNT }, () => []);
+  for (const r of rows) {
+    const minOfDay = r.t.getHours() * 60 + r.t.getMinutes();
+    const idx = Math.floor(minOfDay / BIN_MIN);
+    const bin = bins[idx];
+    if (bin) bin.push(r.v);
+  }
+
+  const result = bins.map((vals, i) => {
+    const sorted = [...vals].sort((a, b) => a - b);
+    return {
+      bin: i,
+      p5: percentile(sorted, 5),
+      p25: percentile(sorted, 25),
+      p50: percentile(sorted, 50),
+      p75: percentile(sorted, 75),
+      p95: percentile(sorted, 95),
+      n: sorted.length,
+    };
+  });
+
+  return {
+    bins: result,
+    binMinutes: BIN_MIN,
+    days: 14,
+    totalReadings: rows.length,
+  };
+});

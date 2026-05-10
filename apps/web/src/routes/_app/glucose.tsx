@@ -1,20 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, Plug } from "lucide-react";
 import { PageTopbar } from "~/components/app/topbar";
+import { AgpChart } from "~/components/charts/agp-chart";
 import { Sparkline } from "~/components/charts/sparkline";
 import { formatGlucose } from "~/lib/format";
-import { getGlucoseTraceFn } from "~/server/functions/data";
+import { getAgpFn, getGlucoseTraceFn } from "~/server/functions/data";
 
 const display = { fontFamily: "var(--font-bricolage)" } as const;
 const mono = { fontFamily: "var(--font-mono-grotesque)" } as const;
 
 export const Route = createFileRoute("/_app/glucose")({
   component: GlucosePage,
-  loader: () => getGlucoseTraceFn(),
+  loader: async () => ({
+    readings: await getGlucoseTraceFn(),
+    agp: await getAgpFn(),
+  }),
 });
 
 function GlucosePage() {
-  const readings = Route.useLoaderData();
+  const { readings, agp } = Route.useLoaderData();
   const empty = readings.length === 0;
   const peak = empty ? 0 : Math.max(...readings.map((r) => r.v));
   const low = empty ? 0 : Math.min(...readings.map((r) => r.v));
@@ -127,6 +131,44 @@ function GlucosePage() {
                 {below}% below · {above}% above
               </p>
             </article>
+
+            {agp.totalReadings > 0 ? (
+              <article className="rounded-3xl border border-border/40 bg-card/90 p-6 backdrop-blur-xl">
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <p
+                      className="text-xs uppercase tracking-[0.2em] text-muted-foreground"
+                      style={mono}
+                    >
+                      AGP · 14 days
+                    </p>
+                    <h2 className="mt-1 text-2xl font-semibold tracking-tight" style={display}>
+                      Ambulatory Glucose Profile
+                    </h2>
+                  </div>
+                  <span className="text-xs text-muted-foreground" style={mono}>
+                    {agp.totalReadings} readings · 5/25/50/75/95 percentiles
+                  </span>
+                </div>
+                <div className="mt-5 h-72 text-emerald-500/85">
+                  <AgpChart bins={agp.bins} binMinutes={agp.binMinutes} className="size-full" />
+                </div>
+                <div
+                  className="mt-3 flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground"
+                  style={mono}
+                >
+                  <span>00:00</span>
+                  <span>06:00</span>
+                  <span>12:00</span>
+                  <span>18:00</span>
+                  <span>24:00</span>
+                </div>
+                <p className="mt-3 text-[11px] text-muted-foreground" style={mono}>
+                  Bands: solid = 25–75 (IQR), faint = 5–95. Background bands at clinical thresholds
+                  3.0/3.9/10/13.9 mmol·L. Descriptive view; not a prediction.
+                </p>
+              </article>
+            ) : null}
 
             <article className="rounded-3xl border border-border/40 bg-card/90 p-6 backdrop-blur-xl">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
