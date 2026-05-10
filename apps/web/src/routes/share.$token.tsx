@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
+import { AntiScopeFooter } from "~/components/app/anti-scope-footer";
 import { ThemeToggle } from "~/components/theme-toggle";
 
 const display = { fontFamily: "var(--font-bricolage)" } as const;
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/share/$token")({
 // the owner's CGM stream to anyone with a guessable URL.
 function SharePage() {
   return (
-    <div className="relative min-h-dvh bg-background text-foreground">
+    <div className="relative flex min-h-dvh flex-col bg-background text-foreground">
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 -z-0"
@@ -38,7 +39,7 @@ function SharePage() {
           <ThemeToggle />
         </div>
       </header>
-      <main className="relative mx-auto max-w-2xl px-6 pb-12">
+      <main className="relative mx-auto w-full max-w-2xl flex-1 px-6 pb-12">
         <div className="rounded-3xl border border-dashed border-border/60 bg-card/60 p-8 text-center backdrop-blur-xl">
           <Lock className="mx-auto size-8 text-muted-foreground" />
           <h1 className="mt-3 text-2xl font-semibold tracking-tight" style={display}>
@@ -53,6 +54,7 @@ function SharePage() {
           </p>
         </div>
       </main>
+      <AntiScopeFooter />
     </div>
   );
 }
