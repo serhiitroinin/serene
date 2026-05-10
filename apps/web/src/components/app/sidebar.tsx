@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import {
   Activity,
+  AlertCircle,
   Bell,
   BookOpen,
+  CircleDashed,
   Heart,
   Inbox,
   Layers,
@@ -10,9 +12,29 @@ import {
   Settings,
   Share2,
 } from "lucide-react";
+import type { SourceMeta } from "~/server/sources/types";
 
 const display = { fontFamily: "var(--font-bricolage)" } as const;
 const mono = { fontFamily: "var(--font-mono-grotesque)" } as const;
+
+type SourceStatus = {
+  meta: SourceMeta;
+  connected: boolean;
+  lastRefreshedAt: Date | null;
+  lastError: string | null;
+};
+
+function relativeTime(d: Date | null): string {
+  if (!d) return "never";
+  const ms = Date.now() - d.getTime();
+  const min = Math.round(ms / 60_000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `${hr} hr ago`;
+  const day = Math.round(hr / 24);
+  return `${day} day${day === 1 ? "" : "s"} ago`;
+}
 
 const NAV = [
   { to: "/", label: "Today", icon: Inbox, exact: true },
@@ -31,7 +53,7 @@ const SECONDARY = [
   },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ sources }: { sources?: ReadonlyArray<SourceStatus> }) {
   return (
     <aside className="sticky top-0 hidden h-dvh flex-col gap-4 border-r border-border/40 bg-card/60 px-3 py-4 backdrop-blur-xl lg:flex">
       <div className="flex items-center gap-2 px-1.5">
@@ -112,17 +134,42 @@ export function AppSidebar() {
             manage
           </Link>
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          Connect Libre, WHOOP, and Garmin from{" "}
-          <Link
-            to="/settings"
-            search={{ tab: "sources" }}
-            className="underline hover:text-foreground"
-          >
-            settings
-          </Link>
-          .
-        </p>
+        {sources && sources.length > 0 ? (
+          <ul className="mt-2 space-y-1.5">
+            {sources.map((s) => (
+              <li key={s.meta.id} className="flex items-center justify-between gap-2 text-[11px]">
+                <span className="truncate text-foreground/80">{s.meta.name}</span>
+                {!s.connected ? (
+                  <span className="flex items-center gap-1 text-muted-foreground/80">
+                    <CircleDashed className="size-3" />
+                    <span>not connected</span>
+                  </span>
+                ) : s.lastError ? (
+                  <span className="flex items-center gap-1 text-rose-500/90" title={s.lastError}>
+                    <AlertCircle className="size-3" />
+                    <span>sync failing</span>
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground" style={mono}>
+                    {relativeTime(s.lastRefreshedAt)}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Connect Libre, WHOOP, and Garmin from{" "}
+            <Link
+              to="/settings"
+              search={{ tab: "sources" }}
+              className="underline hover:text-foreground"
+            >
+              settings
+            </Link>
+            .
+          </p>
+        )}
       </div>
     </aside>
   );
