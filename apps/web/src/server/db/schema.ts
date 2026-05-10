@@ -187,6 +187,17 @@ export const treatments = sqliteTable("treatments", {
   createdAt: createdAt(),
 });
 
+export const shareLinks = sqliteTable("share_links", {
+  token: text("token").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<"activity">().notNull(),
+  targetId: text("target_id").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: createdAt(),
+});
+
 export const syncState = sqliteTable(
   "sync_state",
   {
@@ -214,4 +225,5 @@ export type GarminTrackPoint = typeof garminTrackPoints.$inferSelect;
 export type GarminScheduledWorkout = typeof garminScheduledWorkouts.$inferSelect;
 export type GarminDailySummary = typeof garminDailySummaries.$inferSelect;
 export type Treatment = typeof treatments.$inferSelect;
+export type ShareLink = typeof shareLinks.$inferSelect;
 export type SyncState = typeof syncState.$inferSelect;

@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { Heart, MapPin, Mountain, Timer } from "lucide-react";
+import { Check, Copy, Heart, Link2, MapPin, Mountain, Timer } from "lucide-react";
+import { useState } from "react";
 import { PageTopbar } from "~/components/app/topbar";
 import { GlucoseTintedRoute } from "../../../components/app/glucose-tinted-route";
 import { WorkoutOverlay, ZoneStats } from "../../../components/charts/workout-overlay";
@@ -11,6 +12,7 @@ import {
   formatPace,
 } from "../../../lib/format";
 import { getActivityDetailFn } from "../../../server/functions/data";
+import { createActivityShareLinkFn } from "../../../server/functions/share";
 
 const display = { fontFamily: "var(--font-bricolage)" } as const;
 const mono = { fontFamily: "var(--font-mono-grotesque)" } as const;
@@ -26,6 +28,8 @@ export const Route = createFileRoute("/_app/activity/$id")({
 
 function ActivityDetail() {
   const a = Route.useLoaderData();
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const coords: [number, number][] = a.track.map((p) => [p.lng, p.lat]);
   const center = computeRouteCenter(a.track);
   const startISO = new Date(a.start).toLocaleString("en-US", {
@@ -36,6 +40,21 @@ function ActivityDetail() {
     minute: "2-digit",
   });
 
+  async function generateShareLink() {
+    const result = await createActivityShareLinkFn({ data: { activityId: a.id } });
+    if (result.ok) {
+      const url = `${window.location.origin}/share/${result.token}`;
+      setShareUrl(url);
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // clipboard unavailable; the URL is still rendered
+      }
+    }
+  }
+
   return (
     <>
       <PageTopbar
@@ -44,6 +63,30 @@ function ActivityDetail() {
         back={{ to: "/activity", label: "all activity" }}
       />
       <main className="grid gap-3 px-6 py-5">
+        <div className="flex items-center justify-end gap-2">
+          {shareUrl ? (
+            <span
+              className="rounded-md bg-muted/40 px-2.5 py-1 text-[11px] text-muted-foreground"
+              style={mono}
+            >
+              {shareUrl} {copied ? "· copied" : ""}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            onClick={generateShareLink}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-card/80 px-3 py-1.5 text-xs hover:bg-card"
+          >
+            {copied ? (
+              <Check className="size-3.5" />
+            ) : shareUrl ? (
+              <Copy className="size-3.5" />
+            ) : (
+              <Link2 className="size-3.5" />
+            )}
+            {shareUrl ? "Copied" : "Generate share link"}
+          </button>
+        </div>
         <section className="overflow-hidden rounded-3xl border border-border/40 bg-card/90 backdrop-blur-xl">
           {a.hasGps && coords.length > 0 ? (
             <div className="aspect-[16/7] w-full">
