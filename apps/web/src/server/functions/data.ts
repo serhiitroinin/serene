@@ -102,9 +102,20 @@ export const getDashboardFn = createServerFn({ method: "GET" }).handler(async ()
     .limit(1)
     .all()[0];
 
+  const weekReadings = db
+    .select()
+    .from(glucoseReadings)
+    .where(and(eq(glucoseReadings.userId, userId), gte(glucoseReadings.timestamp, sinceWeek)))
+    .orderBy(asc(glucoseReadings.timestamp))
+    .all();
+
   // Today's planned workout from Garmin Coach (next not-yet-completed entry
-  // for today's date, if any). This is what F10 (Tomorrow card) extends.
+  // for today's date, if any). This is what the Tomorrow card extends.
   const todayDateStr = new Date().toISOString().slice(0, 10);
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowDateStr = tomorrowDate.toISOString().slice(0, 10);
+
   const todaysScheduled = db
     .select()
     .from(garminScheduledWorkouts)
@@ -116,6 +127,47 @@ export const getDashboardFn = createServerFn({ method: "GET" }).handler(async ()
     )
     .all();
   const todaysPlanned = todaysScheduled.find((s) => !s.completed) ?? null;
+
+  const tomorrowsScheduled = db
+    .select()
+    .from(garminScheduledWorkouts)
+    .where(
+      and(
+        eq(garminScheduledWorkouts.userId, userId),
+        eq(garminScheduledWorkouts.scheduledDate, tomorrowDateStr),
+      ),
+    )
+    .all();
+  const tomorrowsPlanned = tomorrowsScheduled[0] ?? null;
+
+  // Last 7 nights overnight glucose (8h windows starting at 22:00 local each
+  // of the past 7 days). Each night → array of {t,v} for the mini-trace.
+  type NightTrace = { date: string; readings: Array<{ t: number; v: number }> };
+  const overnightSeven: NightTrace[] = [];
+  for (let i = 7; i >= 1; i--) {
+    const dayStart = new Date();
+    dayStart.setHours(22, 0, 0, 0);
+    dayStart.setDate(dayStart.getDate() - i);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setHours(dayEnd.getHours() + 8);
+    const night = weekReadings.filter((r) => r.timestamp >= dayStart && r.timestamp < dayEnd);
+    overnightSeven.push({
+      date: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
+      readings: night.map((r) => ({ t: r.timestamp.getTime(), v: r.valueMmol })),
+    });
+  }
+
+  // Recovery 7d trend: simple list of {date, score}.
+  const recovery7d = db
+    .select()
+    .from(whoopRecoveries)
+    .where(and(eq(whoopRecoveries.userId, userId), gte(whoopRecoveries.date, sinceWeek)))
+    .orderBy(asc(whoopRecoveries.date))
+    .all()
+    .map((r) => ({
+      date: r.date.toLocaleDateString("en-US", { weekday: "short" }),
+      score: r.score ?? 0,
+    }));
 
   const recentActivities = db
     .select()
@@ -130,13 +182,6 @@ export const getDashboardFn = createServerFn({ method: "GET" }).handler(async ()
     .from(treatments)
     .where(and(eq(treatments.userId, userId), gte(treatments.timestamp, sinceDay)))
     .orderBy(desc(treatments.timestamp))
-    .all();
-
-  const weekReadings = db
-    .select()
-    .from(glucoseReadings)
-    .where(and(eq(glucoseReadings.userId, userId), gte(glucoseReadings.timestamp, sinceWeek)))
-    .orderBy(asc(glucoseReadings.timestamp))
     .all();
 
   const weeklyTIR: Array<{ date: string; weekday: string; inRange: number; avg: number }> = [];
@@ -176,6 +221,18 @@ export const getDashboardFn = createServerFn({ method: "GET" }).handler(async ()
           planName: todaysPlanned.planName ?? null,
         }
       : null,
+    tomorrow: {
+      planned: tomorrowsPlanned
+        ? {
+            name: tomorrowsPlanned.name ?? "Scheduled workout",
+            sport: tomorrowsPlanned.sport ?? null,
+            durationSeconds: tomorrowsPlanned.durationSeconds ?? null,
+            planName: tomorrowsPlanned.planName ?? null,
+          }
+        : null,
+      overnightSeven,
+      recovery7d,
+    },
     today: {
       avg: Number(avg.toFixed(1)),
       gmi,
