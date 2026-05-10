@@ -1,8 +1,9 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Heart, MapPin, Mountain, Timer } from "lucide-react";
 import { PageTopbar } from "~/components/app/topbar";
+import { GlucoseTintedRoute } from "../../../components/app/glucose-tinted-route";
 import { WorkoutOverlay, ZoneStats } from "../../../components/charts/workout-overlay";
-import { Map, MapControls, MapMarker, MapRoute, MarkerContent } from "../../../components/ui/map";
+import { Map, MapControls, MapMarker, MarkerContent } from "../../../components/ui/map";
 import {
   computeRouteCenter,
   formatDistance,
@@ -47,7 +48,7 @@ function ActivityDetail() {
           {a.hasGps && coords.length > 0 ? (
             <div className="aspect-[16/7] w-full">
               <Map center={center} zoom={12.4} className="size-full">
-                <MapRoute coordinates={coords} color="#10b981" width={4} opacity={0.95} />
+                <GlucoseTintedRoute track={a.track} glucose={a.glucoseOverlap} />
                 <MapMarker longitude={coords[0]![0]} latitude={coords[0]![1]}>
                   <MarkerContent>
                     <span className="grid size-6 place-items-center rounded-full bg-emerald-500 text-[10px] font-bold text-white shadow ring-2 ring-background">
