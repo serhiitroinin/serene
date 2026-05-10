@@ -349,7 +349,13 @@ export const getActivityDetailFn = createServerFn({ method: "GET" })
       maxHr: activity.maxHr ?? 0,
       elevation: activity.elevationGainMeters ?? 0,
       hasGps: activity.hasGps ?? false,
-      track: points.map((p) => ({ lat: p.lat, lng: p.lng, t: p.timestamp.getTime() })),
+      track: points.map((p) => ({
+        lat: p.lat,
+        lng: p.lng,
+        t: p.timestamp.getTime(),
+        hr: p.hrBpm,
+        speed: p.speedMps,
+      })),
       glucoseOverlap: overlap.map((r) => ({ t: r.timestamp.getTime(), v: r.valueMmol })),
     };
   });
