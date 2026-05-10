@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Anti-scope (no medical advice features)
+    url: https://github.com/serhiitroinin/serene/blob/main/docs/anti-scope.md
+    about: Before suggesting alarms, dose math, or predictions — read this. serene is a dashboard, not a medical device.
