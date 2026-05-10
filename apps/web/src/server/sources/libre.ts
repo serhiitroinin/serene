@@ -282,7 +282,7 @@ export const libreSource: Source<Payload> = {
         label: "LibreLinkUp follower email",
         type: "email",
         required: true,
-        hint: "Not your LibreLink patient email — the email tied to a follower account.",
+        hint: "Not your LibreLink patient email — the email tied to a follower account. See docs/sources/librelinkup.md.",
       },
       { key: "password", label: "Password", type: "password", required: true },
       {
