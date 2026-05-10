@@ -32,6 +32,7 @@ Produces a scored evaluation and adds to the prioritized backlog.
 ## Step 1: UNDERSTAND
 
 Parse the user's feature idea. Identify:
+
 - What the feature does (functional description)
 - Who it's for (which persona)
 - What problem it solves
@@ -44,6 +45,7 @@ Generate a kebab-case slug for the feature: `<feature-slug>`.
 **Critical step — prevents proposing features that already exist.**
 
 Search the codebase for evidence of implementation:
+
 - Grep for related keywords in `apps/web/src/`
 - Check Convex schema for related tables/fields
 - Look for related components, hooks, or pages
@@ -79,25 +81,31 @@ Write `product/features/<feature-slug>/pitch.md` using the template at `product/
 Fill in ALL sections:
 
 ### Section 1: Problem
+
 - State the problem with evidence
 - Include user quotes if available
 
 ### Section 2: Persona Impact Matrix
+
 - Evaluate against Sasha (PRIMARY) — this is the gating check
 - Note Riley and Coach impact (DEFERRED personas) for context only
 - **If Sasha doesn't care, the feature needs exceptional justification**
 
 ### Section 3: JTBD Alignment
+
 - Check boxes for which jobs (see jobs-to-be-done.md) this serves
 - If it doesn't serve J1, J2, or J3, flag this
 
 ### Section 4: Constraints Check
+
 - List each relevant constraint from `product/constraints.md`
 - Note: Blocks / Limits / No impact
 - If anything blocks, propose a mitigation
 
 ### Section 5: RICE Score
+
 Calculate using these definitions:
+
 - **Reach**: Users affected per quarter. Assume ~200 active users. Be specific.
 - **Impact**: 0.25 (Minimal), 0.5 (Low), 1 (Medium), 2 (High), 3 (Massive)
 - **Confidence**: 0-100%. Deduct for: no user evidence (-20%), technical unknowns (-15%), only serves deferred personas (-20%)
@@ -105,6 +113,7 @@ Calculate using these definitions:
 - **Formula**: (Reach × Impact × Confidence%) / Effort
 
 ### Section 6: Shape Up Pitch
+
 - Set appetite (Small: 1-2 days, Medium: 1 week, Large: 2-3 weeks, Epic: 4-6 weeks)
 - Solution sketch in broad strokes
 - List rabbit holes (where we might get stuck)
@@ -116,12 +125,12 @@ Leave sections 7 (Decision) and 8 (Outcome) empty — those are filled later.
 
 Present the RICE score with interpretation:
 
-| Score | Interpretation |
-|-------|---------------|
-| > 500 | Strong yes — prioritize immediately |
-| 200-500 | Good candidate — schedule for next cycle |
-| 50-200 | Maybe — needs stronger evidence or lower effort |
-| < 50 | Probably not now — revisit when conditions change |
+| Score   | Interpretation                                    |
+| ------- | ------------------------------------------------- |
+| > 500   | Strong yes — prioritize immediately               |
+| 200-500 | Good candidate — schedule for next cycle          |
+| 50-200  | Maybe — needs stronger evidence or lower effort   |
+| < 50    | Probably not now — revisit when conditions change |
 
 ## Step 6: BACKLOG
 

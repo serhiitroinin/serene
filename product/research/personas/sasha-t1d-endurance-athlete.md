@@ -18,26 +18,26 @@ priority: PRIMARY
 
 ## Demographics
 
-| Attribute | Value |
-|-----------|-------|
-| **Role** | Knowledge worker (engineer/designer/PM/founder), serious amateur endurance athlete |
-| **Age range** | 28–45 |
-| **T1D duration** | 5+ years; comfortable on basal-bolus or pump |
-| **CGM** | FreeStyle Libre 3 (or Dexcom G7) |
-| **Recovery wearable** | WHOOP 4.0 / WHOOP MG |
-| **GPS device** | Garmin (Forerunner 9xx, Fenix, Edge) |
-| **Technical proficiency** | High — runs Docker, knows what self-hosting means |
-| **Training volume** | 6–12 h/week, follows a structured plan |
-| **Discipline** | Running primary; some cyclists, triathletes, mountain athletes |
-| **Budget sensitivity** | Medium — pays for WHOOP+Garmin+Libre already; OSS is a values choice, not a cost choice |
+| Attribute                 | Value                                                                                   |
+| ------------------------- | --------------------------------------------------------------------------------------- |
+| **Role**                  | Knowledge worker (engineer/designer/PM/founder), serious amateur endurance athlete      |
+| **Age range**             | 28–45                                                                                   |
+| **T1D duration**          | 5+ years; comfortable on basal-bolus or pump                                            |
+| **CGM**                   | FreeStyle Libre 3 (or Dexcom G7)                                                        |
+| **Recovery wearable**     | WHOOP 4.0 / WHOOP MG                                                                    |
+| **GPS device**            | Garmin (Forerunner 9xx, Fenix, Edge)                                                    |
+| **Technical proficiency** | High — runs Docker, knows what self-hosting means                                       |
+| **Training volume**       | 6–12 h/week, follows a structured plan                                                  |
+| **Discipline**            | Running primary; some cyclists, triathletes, mountain athletes                          |
+| **Budget sensitivity**    | Medium — pays for WHOOP+Garmin+Libre already; OSS is a values choice, not a cost choice |
 
 ## Context
 
 Sasha lives in a city with good running infrastructure (Amsterdam, Berlin, NYC, Boulder, London). They're targeting a half-marathon, marathon, or triathlon ~6 months out. They wake up, check glucose on phone, decide breakfast, work, train at lunch or evening, and review the day before bed.
 
-Diabetes management isn't a crisis — it's *constant low-grade tax* on attention. Their endo trusts them to self-manage; they don't need a clinician portal, they need a tool that respects their time.
+Diabetes management isn't a crisis — it's _constant low-grade tax_ on attention. Their endo trusts them to self-manage; they don't need a clinician portal, they need a tool that respects their time.
 
-They've stitched together what they currently use: LibreLinkUp on phone for current glucose, Garmin Connect for workout, WHOOP app for recovery, a notes app for "what worked this morning." On their laptop, when they want to actually *think* about patterns, they have nothing satisfying to open. They've tried Tidepool (clinician-y), Nightscout (caregiver-shaped, ugly), and nothing fits.
+They've stitched together what they currently use: LibreLinkUp on phone for current glucose, Garmin Connect for workout, WHOOP app for recovery, a notes app for "what worked this morning." On their laptop, when they want to actually _think_ about patterns, they have nothing satisfying to open. They've tried Tidepool (clinician-y), Nightscout (caregiver-shaped, ugly), and nothing fits.
 
 ## Goals
 
@@ -58,12 +58,14 @@ They've stitched together what they currently use: LibreLinkUp on phone for curr
 ## Current workflow
 
 **Morning (5–7 min):**
+
 1. Wake, glance at LibreLinkUp on phone for overnight trace
 2. Open WHOOP app, check recovery
 3. Open Garmin Connect, check today's planned workout
 4. Decide breakfast, decide whether to swap session
 
 **Pre-workout (2–5 min):**
+
 1. Glance at Libre, decide pre-fuel
 2. Set temp basal if pump, or skip a unit if MDI
 3. Start Garmin
@@ -71,12 +73,14 @@ They've stitched together what they currently use: LibreLinkUp on phone for curr
 **During workout:** Pure execution; glances at Libre ~3–5×.
 
 **Post-workout (5 min):**
+
 1. Save activity in Garmin
 2. Glance at glucose, decide on recovery fueling
 3. Mental note: "I felt off at minute 70, was glucose dropping?" — but no easy way to check
 4. Forget; move on
 
 **Sunday review (45 min, frustrated):**
+
 1. Open Garmin Connect calendar — looks at week's TSS
 2. Open Libre — copies AGP report
 3. Open WHOOP — copies recovery trends
@@ -86,19 +90,19 @@ They've stitched together what they currently use: LibreLinkUp on phone for curr
 
 ## Feature sensitivity
 
-| Capability | Priority | Notes |
-|-----------|----------|-------|
-| Glucose × workout overlay | **Critical** | The reason they would switch. |
-| Today/tomorrow planned workout view | **Critical** | Garmin's view, glucose-aware. |
-| Designer-grade visual quality | **Critical** | They notice; they care; they'll evangelize if it's beautiful. |
-| AGP-style 14-day chart | High | Standard clinical view; want it but not unique. |
-| Late-hypo risk descriptive badge | High | High-signal differentiator if framed correctly. |
-| Self-hostable (Docker compose) | **Critical** | Trust + values + control. Cloud SaaS = no. |
-| Multi-tenant / family view | Low | Solo athlete; future nice-to-have. |
-| Manual treatment logging | Low (v0.2+) | Useful eventually, not v0.1 blocker. |
-| Native mobile app | Low | Mobile-responsive web is fine. |
-| Coach / partner share link | High | Solves J7 directly. |
-| Plugin marketplace | None | Premature; they'd write their own integration. |
+| Capability                          | Priority     | Notes                                                         |
+| ----------------------------------- | ------------ | ------------------------------------------------------------- |
+| Glucose × workout overlay           | **Critical** | The reason they would switch.                                 |
+| Today/tomorrow planned workout view | **Critical** | Garmin's view, glucose-aware.                                 |
+| Designer-grade visual quality       | **Critical** | They notice; they care; they'll evangelize if it's beautiful. |
+| AGP-style 14-day chart              | High         | Standard clinical view; want it but not unique.               |
+| Late-hypo risk descriptive badge    | High         | High-signal differentiator if framed correctly.               |
+| Self-hostable (Docker compose)      | **Critical** | Trust + values + control. Cloud SaaS = no.                    |
+| Multi-tenant / family view          | Low          | Solo athlete; future nice-to-have.                            |
+| Manual treatment logging            | Low (v0.2+)  | Useful eventually, not v0.1 blocker.                          |
+| Native mobile app                   | Low          | Mobile-responsive web is fine.                                |
+| Coach / partner share link          | High         | Solves J7 directly.                                           |
+| Plugin marketplace                  | None         | Premature; they'd write their own integration.                |
 
 ## Willingness to pay
 
@@ -130,12 +134,14 @@ They've stitched together what they currently use: LibreLinkUp on phone for curr
 ## What we know vs assume
 
 **Known (this is the project owner's lived experience):**
+
 - The 4-tools-no-overlap workflow
 - Late-hypo surprise pattern
 - Designer-grade matters
 - Self-host is a values requirement
 
 **Assumed (validate post-launch):**
+
 - Reach of this persona — how many T1D athletes globally are tech-savvy enough to self-host?
 - Willingness to share PRs vs just using
 - Coach segment size

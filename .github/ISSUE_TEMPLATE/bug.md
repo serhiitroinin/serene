@@ -8,14 +8,17 @@ labels: ["type: bug"]
 ## Summary
 
 ## Steps to reproduce
+
 1.
 2.
 3.
 
 ## Expected
+
 ## Actual
 
 ## Environment
+
 - serene version / commit:
 - Bun version:
 - OS:
@@ -23,4 +26,5 @@ labels: ["type: bug"]
 - Source(s) involved (Libre / WHOOP / Garmin / multiple):
 
 ## Logs / screenshots
+
 <!-- Redact any email/personal info. -->

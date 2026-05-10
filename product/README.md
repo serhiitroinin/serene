@@ -99,14 +99,14 @@ product/
 
 ## Frameworks
 
-| Framework | Where | Purpose |
-|-----------|-------|---------|
-| **RICE Scoring** | `features/_template.md` | Quantified prioritization |
-| **Shape Up Pitch** | `features/<name>/pitch.md` | Problem/appetite/solution framing |
-| **Jobs to Be Done** | `research/jobs-to-be-done.md` | Understanding user motivations |
-| **User Personas** | `research/personas/*.md` | Evaluating against user archetypes |
-| **MADR** | `decisions/_template.md` | Lightweight decision records |
-| **Now/Next/Later** | `roadmap.md` | Roadmap without false precision |
+| Framework           | Where                         | Purpose                            |
+| ------------------- | ----------------------------- | ---------------------------------- |
+| **RICE Scoring**    | `features/_template.md`       | Quantified prioritization          |
+| **Shape Up Pitch**  | `features/<name>/pitch.md`    | Problem/appetite/solution framing  |
+| **Jobs to Be Done** | `research/jobs-to-be-done.md` | Understanding user motivations     |
+| **User Personas**   | `research/personas/*.md`      | Evaluating against user archetypes |
+| **MADR**            | `decisions/_template.md`      | Lightweight decision records       |
+| **Now/Next/Later**  | `roadmap.md`                  | Roadmap without false precision    |
 
 ---
 
@@ -123,9 +123,9 @@ product/
 
 ## Relationship to Other Docs
 
-| Need | Where to look |
-|------|--------------|
-| *What* to build and *why* | `/product/` |
-| *How* to build it | `/docs/` and `/ARCHITECTURE.md` |
-| *What happened* | `git log` and `/product/decisions/` |
-| *How we work* | `/CLAUDE.md` |
+| Need                      | Where to look                       |
+| ------------------------- | ----------------------------------- |
+| _What_ to build and _why_ | `/product/`                         |
+| _How_ to build it         | `/docs/` and `/ARCHITECTURE.md`     |
+| _What happened_           | `git log` and `/product/decisions/` |
+| _How we work_             | `/CLAUDE.md`                        |

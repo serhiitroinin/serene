@@ -31,6 +31,7 @@ Feedback is the evidence layer that validates personas, scores features, and gen
 ## Step 1: CAPTURE
 
 The user will share feedback in one of these forms:
+
 - **Raw notes** from an interview or usability test
 - **A support ticket** or email from a user
 - **A quote or comment** from social media, review site, or community
@@ -40,6 +41,7 @@ The user will share feedback in one of these forms:
 Structure the feedback using the template at `product/research/feedback/_template.md`.
 
 ### Extract from the raw input:
+
 - **Key quotes** — exact user words (the most valuable artifact)
 - **Pain points** — where did they struggle or express frustration?
 - **Feature requests** — what did they ask for (explicitly or implicitly)?
@@ -47,11 +49,13 @@ Structure the feedback using the template at `product/research/feedback/_templat
 - **What worked** — what did they find easy or delightful?
 
 ### Classify the session:
+
 - **Session type:** Interview / Usability test / Support ticket / Survey / Organic
 - **User type:** Prospect / Free user / Pro user / Churned user
 - **Persona match:** Which persona does this user most resemble? (Sasha / Riley / Coach / New)
 
 If the user provides minimal context, ask focused questions:
+
 - "Was this a paying user or free tier?"
 - "Were they trying to record, edit, publish, or something else?"
 - "Did they say anything in their own words that stood out?"
@@ -68,6 +72,7 @@ product/constraints.md                             → Are constraints causing t
 ```
 
 For each pain point and feature request:
+
 - Map to a specific JTBD (see jobs-to-be-done.md) or identify a new job
 - Match to an existing backlog feature (see backlog) or flag as new
 - Note the stage where it occurred (Setup / Daily glance / Workout / Post-workout / Weekly review / Sharing)
@@ -77,18 +82,23 @@ For each pain point and feature request:
 Determine how this feedback should affect product decisions:
 
 ### Persona Validation
+
 - Does this session confirm Sasha's goals, frustrations, and priorities?
 - Does it reveal anything that contradicts our persona assumptions?
 - If the user doesn't match any persona, should we track this as a new segment?
 
 ### RICE Impact
+
 For each backlog feature this feedback touches:
+
 - **Confidence adjustment** — User confirmed the problem → increase confidence by 5-10%
 - **Reach adjustment** — New user segment cares → increase reach estimate
 - **Impact adjustment** — User described severe pain → reconsider impact score
 
 ### New Feature Signals
+
 If the feedback suggests a feature not in the backlog:
+
 - Is this a one-off request or a pattern? (Check previous sessions in `insights.md`)
 - Does it serve Sasha? (If not, note it but don't act)
 - If it's the 3rd+ mention of the same need, recommend running `/pm-evaluate`
@@ -98,11 +108,13 @@ If the feedback suggests a feature not in the backlog:
 ### Save the session
 
 Write the structured feedback to:
+
 ```
 product/research/feedback/sessions/YYYY-MM-DD-<type>-<slug>.md
 ```
 
 Example filenames:
+
 - `2026-04-02-interview-yoga-instructor.md`
 - `2026-04-02-support-export-failure.md`
 - `2026-04-02-organic-twitter-praise.md`
@@ -124,22 +136,26 @@ Read `product/research/feedback/insights.md` and update:
 Recommend follow-up actions based on the feedback:
 
 **If the feedback confirms a backlog feature:**
+
 ```
 → F<N> confidence increased. Consider running `/pm-accept F<N>` if RICE > 200.
 ```
 
 **If the feedback suggests a new feature (3+ mentions):**
+
 ```
 → New pattern detected: "<description>". Recommend: /pm-evaluate <feature idea>
 ```
 
 **If the feedback challenges a persona assumption:**
+
 ```
 → Persona update needed: Sasha's "<assumption>" may be wrong. Evidence: "<quote>"
   Update: product/research/personas/sasha-t1d-endurance-athlete.md
 ```
 
 **If the feedback is a support issue (not a feature):**
+
 ```
 → Bug/UX issue: "<description>". Create GitHub Issue: gh issue create ...
 ```

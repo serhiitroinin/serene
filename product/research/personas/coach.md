@@ -17,13 +17,13 @@ priority: TERTIARY
 
 ## Demographics
 
-| Attribute | Value |
-|-----------|-------|
-| **Role** | Endurance coach (running / cycling / triathlon) |
-| **Athletes on roster** | 5–30 |
-| **T1D athletes on roster** | 1–3 |
-| **Tools** | TrainingPeaks (default), Final Surge, sometimes Strava Premium |
-| **Technical proficiency** | Medium — comfortable with web tools, not self-hosting |
+| Attribute                  | Value                                                          |
+| -------------------------- | -------------------------------------------------------------- |
+| **Role**                   | Endurance coach (running / cycling / triathlon)                |
+| **Athletes on roster**     | 5–30                                                           |
+| **T1D athletes on roster** | 1–3                                                            |
+| **Tools**                  | TrainingPeaks (default), Final Surge, sometimes Strava Premium |
+| **Technical proficiency**  | Medium — comfortable with web tools, not self-hosting          |
 
 ## Context
 
@@ -42,12 +42,12 @@ Coach already has a workflow built around TrainingPeaks: athletes upload activit
 
 ## Feature sensitivity
 
-| Capability | Priority |
-|-----------|----------|
-| Receive a share link from athlete with workout × glucose overlay | **Critical** |
-| Comment back inside serene | Medium (TrainingPeaks already has this) |
-| Coach-side dashboard with multiple athletes | Low (v0.3+) |
-| Self-host their own coach instance | Low |
+| Capability                                                       | Priority                                |
+| ---------------------------------------------------------------- | --------------------------------------- |
+| Receive a share link from athlete with workout × glucose overlay | **Critical**                            |
+| Comment back inside serene                                       | Medium (TrainingPeaks already has this) |
+| Coach-side dashboard with multiple athletes                      | Low (v0.3+)                             |
+| Self-host their own coach instance                               | Low                                     |
 
 ## Jobs to be done
 

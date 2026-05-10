@@ -9,10 +9,10 @@ Engineering-focused documentation. Upstream product decisions live in [`/product
 
 ## Where to find what
 
-| Question | Where |
-|----------|-------|
-| What are we building, for whom, why? | [`/product/`](../product/) |
-| How do we build it? | `/docs/` and inline code |
-| What was decided and why? | [`/product/decisions/`](../product/decisions/) |
-| How do we work? | [`/CLAUDE.md`](../CLAUDE.md) |
-| What's safe to ship vs anti-scope? | [`anti-scope.md`](anti-scope.md) |
+| Question                             | Where                                          |
+| ------------------------------------ | ---------------------------------------------- |
+| What are we building, for whom, why? | [`/product/`](../product/)                     |
+| How do we build it?                  | `/docs/` and inline code                       |
+| What was decided and why?            | [`/product/decisions/`](../product/decisions/) |
+| How do we work?                      | [`/CLAUDE.md`](../CLAUDE.md)                   |
+| What's safe to ship vs anti-scope?   | [`anti-scope.md`](anti-scope.md)               |

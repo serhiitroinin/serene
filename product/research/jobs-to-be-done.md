@@ -25,6 +25,7 @@ The unifying observation: a T1D endurance athlete makes a small set of repeating
 **so I can** decide if I need to swap today's session, fuel differently, or adjust expectations — without opening 4 apps.
 
 ### Functional requirements
+
 - Latest glucose + trend + range badge
 - Today's scheduled workout (from Garmin Coach / Garmin calendar)
 - WHOOP recovery score
@@ -32,6 +33,7 @@ The unifying observation: a T1D endurance athlete makes a small set of repeating
 - One CTA per anomaly (e.g., "Recovery red — see why")
 
 ### Personas
+
 - **Sasha:** Critical. Opens this 1–3×/day.
 - **Riley:** Critical. Opens 1×/day.
 - **Coach:** Read-only weekly view, less critical.
@@ -45,12 +47,14 @@ The unifying observation: a T1D endurance athlete makes a small set of repeating
 **so I can** decide whether to set a temp basal at bedtime, change dinner carbs, or move the session.
 
 ### Functional requirements
+
 - Tomorrow's planned workout — pulled from Garmin Coach / Garmin calendar / manual
 - Last 7d overnight glucose mini-trace
 - Recovery 7d trend strip
 - "Workouts like this in the past" — historical median glucose response
 
 ### Personas
+
 - **Sasha:** Critical (this is the differentiator vs Garmin Connect).
 - **Riley:** Medium (no formal plan).
 
@@ -63,13 +67,15 @@ The unifying observation: a T1D endurance athlete makes a small set of repeating
 **so I can** understand what fueling worked, where I dropped, and whether next time I should change anything.
 
 ### Functional requirements
+
 - Per-activity detail page with synced lines (HR, glucose, pace/power)
 - Aerobic-vs-anaerobic glucose response signature visible
 - Map with route, glucose-on-route coloring
 - Annotated zones (Z1-Z5) with median glucose per zone
 
 ### Personas
-- **Sasha:** Critical — this is *the* signature feature.
+
+- **Sasha:** Critical — this is _the_ signature feature.
 - **Riley:** High — opens this for any session > 45 min.
 - **Coach:** Critical — what they share with Sasha.
 
@@ -85,12 +91,14 @@ The unifying observation: a T1D endurance athlete makes a small set of repeating
 **so I can** decide on dinner carbs, basal adjustment expectations, and bed-snack choices myself.
 
 ### Functional requirements
+
 - "Sessions like this" historical lookup (similar duration / TSS / glucose-end-point)
 - Historical overnight nadir distribution (median, p25, p75)
 - A descriptive risk badge (low/medium/high) with the underlying signals visible
 - **No alarms, no numeric predictions, no carb amount recommendations.**
 
 ### Personas
+
 - **Sasha:** Critical — single most-asked question post-session.
 - **Riley:** Medium — only after long sessions.
 
@@ -103,12 +111,14 @@ The unifying observation: a T1D endurance athlete makes a small set of repeating
 **so I can** decide whether to ramp volume, hold flat, or pull back.
 
 ### Functional requirements
+
 - 7-day strip: TSS by day, planned vs actual
 - CTL/ATL/TSB chart
 - Weekly TIR + CV + GMI
 - Glucose-adjusted readiness signature (CTL × recovery × TIR)
 
 ### Personas
+
 - **Sasha:** Critical (Sunday ritual).
 - **Riley:** Medium.
 - **Coach:** Critical.
@@ -122,11 +132,13 @@ The unifying observation: a T1D endurance athlete makes a small set of repeating
 **so I can** confirm with my data — and adjust if it's not.
 
 ### Functional requirements
+
 - Filter activities by tag/zone/intensity
 - Stats panel showing % of intervals with hyper response, etc.
 - Easy export of one chart for sharing
 
 ### Personas
+
 - **Sasha:** High — happens 1–2×/week.
 
 ---
@@ -138,11 +150,13 @@ The unifying observation: a T1D endurance athlete makes a small set of repeating
 **so I can** explain in 10 seconds without writing a paragraph.
 
 ### Functional requirements
+
 - Per-activity share token (signed, expiring)
 - Read-only view, no auth required
 - Hidden private fields (no medical history, no email)
 
 ### Personas
+
 - **Sasha:** Critical for the coach relationship.
 - **Coach:** Receives these.
 
@@ -155,27 +169,29 @@ The unifying observation: a T1D endurance athlete makes a small set of repeating
 **so I can** decide whether to trust the chart.
 
 ### Functional requirements
+
 - Sensor session boundaries visible on chart
 - "Compression low" candidate flagging (overnight rapid drop with stable HR)
 - Last-sync timestamp per source, visible on every page
 
 ### Personas
+
 - **Sasha:** Critical when anomalies appear.
 
 ---
 
 ## Job Priority Matrix
 
-| Job | Sasha | Riley | Coach | Overall |
-|-----|-------|-------|-------|---------|
-| J1 — Daily glance | **Critical** | **Critical** | Medium | **Critical** |
-| J2 — Plan around tomorrow | **Critical** | Medium | Medium | **Critical** |
-| J3 — Replay workout w/ glucose | **Critical** | High | **Critical** | **Critical** |
-| J4 — Late-hypo risk descriptive | **Critical** | Medium | Medium | High |
-| J5 — Sunday review | **Critical** | Medium | **Critical** | High |
-| J6 — Pattern verification | High | Low | Medium | Medium |
-| J7 — Share with coach/partner | **Critical** | Low | **Critical** | High |
-| J8 — Sensor sanity | High | Medium | Low | Medium |
+| Job                             | Sasha        | Riley        | Coach        | Overall      |
+| ------------------------------- | ------------ | ------------ | ------------ | ------------ |
+| J1 — Daily glance               | **Critical** | **Critical** | Medium       | **Critical** |
+| J2 — Plan around tomorrow       | **Critical** | Medium       | Medium       | **Critical** |
+| J3 — Replay workout w/ glucose  | **Critical** | High         | **Critical** | **Critical** |
+| J4 — Late-hypo risk descriptive | **Critical** | Medium       | Medium       | High         |
+| J5 — Sunday review              | **Critical** | Medium       | **Critical** | High         |
+| J6 — Pattern verification       | High         | Low          | Medium       | Medium       |
+| J7 — Share with coach/partner   | **Critical** | Low          | **Critical** | High         |
+| J8 — Sensor sanity              | High         | Medium       | Low          | Medium       |
 
 **Insight:** J1, J2, J3 are the make-or-break jobs for Sasha. Together they cover the daily/nightly/post-session loop. J5 + J7 round out the weekly cadence. J4 is the highest-value differentiator that requires the cross-source join. J8 is the trust foundation that everything else rests on.
 

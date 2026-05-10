@@ -17,16 +17,16 @@ priority: SECONDARY
 
 ## Demographics
 
-| Attribute | Value |
-|-----------|-------|
-| **Role** | Anyone — T1D adult who exercises regularly |
-| **Age range** | 30–55 |
-| **CGM** | Libre 3 or Dexcom G7 |
-| **Recovery wearable** | Maybe Apple Watch / Garmin entry-level / nothing |
-| **Training volume** | 3–4 sessions/week, 30–90 min each, no plan |
-| **Discipline** | Mixed — running, gym, yoga, hiking |
+| Attribute                 | Value                                                |
+| ------------------------- | ---------------------------------------------------- |
+| **Role**                  | Anyone — T1D adult who exercises regularly           |
+| **Age range**             | 30–55                                                |
+| **CGM**                   | Libre 3 or Dexcom G7                                 |
+| **Recovery wearable**     | Maybe Apple Watch / Garmin entry-level / nothing     |
+| **Training volume**       | 3–4 sessions/week, 30–90 min each, no plan           |
+| **Discipline**            | Mixed — running, gym, yoga, hiking                   |
 | **Technical proficiency** | Medium — installs apps; might or might not self-host |
-| **Budget sensitivity** | Medium |
+| **Budget sensitivity**    | Medium                                               |
 
 ## Context
 
@@ -51,14 +51,14 @@ Riley exercises for health, not for a goal. They wear a Libre and one fitness de
 
 ## Feature sensitivity
 
-| Capability | Priority |
-|-----------|----------|
-| Today's glucose + recent workout overlay | High |
-| Late-hypo descriptive risk badge | High |
-| Weekly TIR | Medium |
-| TSS / CTL / planned workouts | Low |
-| Self-host vs hosted | Hosted preferred |
-| Designer-grade UX | Medium-High |
+| Capability                               | Priority         |
+| ---------------------------------------- | ---------------- |
+| Today's glucose + recent workout overlay | High             |
+| Late-hypo descriptive risk badge         | High             |
+| Weekly TIR                               | Medium           |
+| TSS / CTL / planned workouts             | Low              |
+| Self-host vs hosted                      | Hosted preferred |
+| Designer-grade UX                        | Medium-High      |
 
 ## Jobs to be done
 
@@ -76,4 +76,4 @@ Riley exercises for health, not for a goal. They wear a Libre and one fitness de
 
 ## v0.2 implication
 
-Riley's needs are mostly a *subset* of Sasha's — except they don't want training-plan UI cluttering the screen. v0.2 might introduce a simpler mode that hides plan/load metrics for users who don't have a Garmin Coach plan or who explicitly opt for "recreational mode."
+Riley's needs are mostly a _subset_ of Sasha's — except they don't want training-plan UI cluttering the screen. v0.2 might introduce a simpler mode that hides plan/load metrics for users who don't have a Garmin Coach plan or who explicitly opt for "recreational mode."

@@ -21,19 +21,19 @@ Base host: `https://connectapi.garmin.com` (no `/proxy/` prefix on the modern
 domain — the legacy `connect.garmin.com/modern/proxy/...` still works but is being
 phased out).
 
-| Purpose | Method | Path |
-|---|---|---|
-| List user's saved workouts (templates) | GET | `/workout-service/workouts?start=0&limit=100` |
-| Workout detail (steps + targets) | GET | `/workout-service/workout/{workoutId}` |
-| Garmin Coach workout detail (UUID) | GET | `/workout-service/fbt-adaptive/{workoutUuid}` |
-| Scheduled workouts for a month | GET | `/calendar-service/year/{YYYY}/month/{MM-1}` *(0-indexed!)* |
-| Scheduled workout by id | GET | `/workout-service/schedule/{scheduledId}` |
-| Schedule a workout on a date | POST | `/workout-service/schedule/{workoutId}` body `{"date":"YYYY-MM-DD"}` |
-| Unschedule | DELETE | `/workout-service/schedule/{scheduledId}` |
-| All training plans (catalog) | GET | `/trainingplan-service/trainingplan/plans` |
-| Phased plan detail | GET | `/trainingplan-service/trainingplan/phased/{planId}` |
-| Adaptive (Garmin Coach) plan detail | GET | `/trainingplan-service/trainingplan/fbt-adaptive/{planId}` |
-| GraphQL (calendar + coach view) | POST | `/graphql-gateway/graphql` |
+| Purpose                                | Method | Path                                                                 |
+| -------------------------------------- | ------ | -------------------------------------------------------------------- |
+| List user's saved workouts (templates) | GET    | `/workout-service/workouts?start=0&limit=100`                        |
+| Workout detail (steps + targets)       | GET    | `/workout-service/workout/{workoutId}`                               |
+| Garmin Coach workout detail (UUID)     | GET    | `/workout-service/fbt-adaptive/{workoutUuid}`                        |
+| Scheduled workouts for a month         | GET    | `/calendar-service/year/{YYYY}/month/{MM-1}` _(0-indexed!)_          |
+| Scheduled workout by id                | GET    | `/workout-service/schedule/{scheduledId}`                            |
+| Schedule a workout on a date           | POST   | `/workout-service/schedule/{workoutId}` body `{"date":"YYYY-MM-DD"}` |
+| Unschedule                             | DELETE | `/workout-service/schedule/{scheduledId}`                            |
+| All training plans (catalog)           | GET    | `/trainingplan-service/trainingplan/plans`                           |
+| Phased plan detail                     | GET    | `/trainingplan-service/trainingplan/phased/{planId}`                 |
+| Adaptive (Garmin Coach) plan detail    | GET    | `/trainingplan-service/trainingplan/fbt-adaptive/{planId}`           |
+| GraphQL (calendar + coach view)        | POST   | `/graphql-gateway/graphql`                                           |
 
 The **GraphQL endpoint is the right one for serene**. It returns a curated
 calendar in a single round-trip and is what the Garmin Connect web UI uses for
@@ -41,29 +41,44 @@ its "Calendar" and "Coach" pages.
 
 ```graphql
 # Scheduled workouts in a date range
-query { workoutScheduleSummariesScalar(startDate:"2026-05-10", endDate:"2026-06-10") }
+query {
+  workoutScheduleSummariesScalar(startDate: "2026-05-10", endDate: "2026-06-10")
+}
 
 # This week's Garmin Coach plan (returns ~7 days around the date)
-query { trainingPlanScalar(calendarDate:"2026-05-10", lang:"en-US", firstDayOfWeek:"monday") }
+query {
+  trainingPlanScalar(calendarDate: "2026-05-10", lang: "en-US", firstDayOfWeek: "monday")
+}
 ```
 
 Sample `trainingPlanScalar` payload (truncated, from brunosantos test fixtures):
 
 ```json
 {
-  "data": { "trainingPlanScalar": {
-    "trainingPlanWorkoutScheduleDTOS": [{
-      "planName": "5K Training Plan",
-      "trainingPlanDetailsDTO": { "athletePlanId": 12345, "workoutsPerWeek": 4 },
-      "workoutScheduleSummaries": [
-        { "workoutUuid": "abc-123", "workoutName": "Base Run",
-          "workoutType": "running", "scheduleDate": "2026-05-12",
-          "tpPlanName": "5K Training Plan",
-          "associatedActivityId": null, "estimatedDurationInSecs": 1800,
-          "workoutPhrase": "AEROBIC_LOW_BASE", "isRestDay": false, "race": false }
+  "data": {
+    "trainingPlanScalar": {
+      "trainingPlanWorkoutScheduleDTOS": [
+        {
+          "planName": "5K Training Plan",
+          "trainingPlanDetailsDTO": { "athletePlanId": 12345, "workoutsPerWeek": 4 },
+          "workoutScheduleSummaries": [
+            {
+              "workoutUuid": "abc-123",
+              "workoutName": "Base Run",
+              "workoutType": "running",
+              "scheduleDate": "2026-05-12",
+              "tpPlanName": "5K Training Plan",
+              "associatedActivityId": null,
+              "estimatedDurationInSecs": 1800,
+              "workoutPhrase": "AEROBIC_LOW_BASE",
+              "isRestDay": false,
+              "race": false
+            }
+          ]
+        }
       ]
-    }]
-  }}
+    }
+  }
 }
 ```
 
@@ -125,12 +140,12 @@ Caveat: Garmin Coach is **read-mostly** — we cannot mutate the plan; we surfac
 Sprint reality check: W19 day 2 has a hard 4-hour gate on Garmin. A training-plan
 view fits in W20 polish, not the W19 port — but only the cheapest tier.
 
-| Tier | What | Effort | Verdict for v0.1 |
-|---|---|---|---|
-| **A. Upcoming-workouts list** | `workoutScheduleSummariesScalar` for next 14 days, list view: date · name · sport · duration. No step detail. | **0.5 day** | **Ship in v0.1.** Highest signal-to-effort. |
-| B. Calendar grid | 4-week month grid, workouts as chips, click → drawer with steps via `fbt-adaptive`/`workout/{id}`. | 2 days | v0.2. |
-| C. Plan progression | `trainingPlanScalar` + `fbt-adaptive` plan endpoint, phase progress, race date countdown, weekly TSS. | 3 days | v0.2 / v0.3. |
-| D. Workout × glucose overlay (post-execution) | Already covered by activity sync; not a "plan" feature. | 0 incremental | Already in scope. |
+| Tier                                          | What                                                                                                          | Effort        | Verdict for v0.1                            |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------- |
+| **A. Upcoming-workouts list**                 | `workoutScheduleSummariesScalar` for next 14 days, list view: date · name · sport · duration. No step detail. | **0.5 day**   | **Ship in v0.1.** Highest signal-to-effort. |
+| B. Calendar grid                              | 4-week month grid, workouts as chips, click → drawer with steps via `fbt-adaptive`/`workout/{id}`.            | 2 days        | v0.2.                                       |
+| C. Plan progression                           | `trainingPlanScalar` + `fbt-adaptive` plan endpoint, phase progress, race date countdown, weekly TSS.         | 3 days        | v0.2 / v0.3.                                |
+| D. Workout × glucose overlay (post-execution) | Already covered by activity sync; not a "plan" feature.                                                       | 0 incremental | Already in scope.                           |
 
 **Decision**: ship Tier A only in v0.1. One server function calling
 `workoutScheduleSummariesScalar` once per sync, persist to a `scheduled_workout`

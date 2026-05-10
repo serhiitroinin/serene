@@ -26,11 +26,11 @@ _What is the raw user problem or request? Include evidence: support tickets, use
 
 > Reference: [Personas](../research/personas/)
 
-| Persona | Cares? | Impact | How it helps them | Would they pay for it? |
-|---------|--------|--------|-------------------|----------------------|
-| **Anya** (Solo Creator) — PRIMARY | Yes/No/Somewhat | High/Medium/Low | | Yes/No/Included |
-| **Marcus** (Corporate Trainer) — DEFERRED | Yes/No/Somewhat | High/Medium/Low | | Yes/No/Included |
-| **Priya** (Agency Producer) — DEFERRED | Yes/No/Somewhat | High/Medium/Low | | Yes/No/Included |
+| Persona                                   | Cares?          | Impact          | How it helps them | Would they pay for it? |
+| ----------------------------------------- | --------------- | --------------- | ----------------- | ---------------------- |
+| **Anya** (Solo Creator) — PRIMARY         | Yes/No/Somewhat | High/Medium/Low |                   | Yes/No/Included        |
+| **Marcus** (Corporate Trainer) — DEFERRED | Yes/No/Somewhat | High/Medium/Low |                   | Yes/No/Included        |
+| **Priya** (Agency Producer) — DEFERRED    | Yes/No/Somewhat | High/Medium/Low |                   | Yes/No/Included        |
 
 **Persona verdict:** _Does this serve Anya? If not, it doesn't ship this quarter unless there's exceptional strategic justification. Features that only serve Marcus or Priya are deferred._
 
@@ -57,10 +57,10 @@ Which jobs does this feature help complete?
 
 > Reference: [Constraints](../constraints.md)
 
-| Constraint | Impact | Mitigation |
-|-----------|--------|------------|
+| Constraint                     | Impact                   | Mitigation                        |
+| ------------------------------ | ------------------------ | --------------------------------- |
 | _e.g., Browser API limitation_ | _Blocks / Limits / None_ | _e.g., polyfill, fallback, defer_ |
-| | | |
+|                                |                          |                                   |
 
 **Constraints verdict:** _Is this feasible within our current technical and business constraints?_
 
@@ -68,23 +68,23 @@ Which jobs does this feature help complete?
 
 ## 5. RICE Score
 
-| Factor | Value | Reasoning |
-|--------|-------|-----------|
-| **Reach** | _users/quarter_ | _How many users will this affect in the next quarter?_ |
-| **Impact** | _0.25 / 0.5 / 1 / 2 / 3_ | _Minimal / Low / Medium / High / Massive_ |
-| **Confidence** | _0-100%_ | _How sure are we about reach and impact estimates?_ |
-| **Effort** | _person-weeks_ | _How many person-weeks to ship a minimum version?_ |
+| Factor         | Value                    | Reasoning                                              |
+| -------------- | ------------------------ | ------------------------------------------------------ |
+| **Reach**      | _users/quarter_          | _How many users will this affect in the next quarter?_ |
+| **Impact**     | _0.25 / 0.5 / 1 / 2 / 3_ | _Minimal / Low / Medium / High / Massive_              |
+| **Confidence** | _0-100%_                 | _How sure are we about reach and impact estimates?_    |
+| **Effort**     | _person-weeks_           | _How many person-weeks to ship a minimum version?_     |
 
-**RICE = (Reach x Impact x Confidence) / Effort = ____**
+**RICE = (Reach x Impact x Confidence) / Effort = \_\_\_\_**
 
 ### RICE Scale Reference
 
-| Score | Interpretation |
-|-------|---------------|
-| > 500 | Strong yes — prioritize immediately |
-| 200-500 | Good candidate — schedule for next cycle |
-| 50-200 | Maybe — needs stronger evidence or lower effort |
-| < 50 | Probably not now — revisit when conditions change |
+| Score   | Interpretation                                    |
+| ------- | ------------------------------------------------- |
+| > 500   | Strong yes — prioritize immediately               |
+| 200-500 | Good candidate — schedule for next cycle          |
+| 50-200  | Maybe — needs stronger evidence or lower effort   |
+| < 50    | Probably not now — revisit when conditions change |
 
 ---
 
@@ -107,15 +107,15 @@ _Describe the solution at a high level. "Fat marker sketch" — broad strokes, n
 
 _What complexities should we call out? Where might we get stuck?_
 
-1. 
-2. 
+1.
+2.
 
 ### No-Gos
 
 _What is explicitly out of scope for this iteration?_
 
-1. 
-2. 
+1.
+2.
 
 ---
 
@@ -125,13 +125,13 @@ _Fill this in when committing to build (or deciding not to)._
 
 **Decision:** Accepted / Rejected / Deferred
 
-**Rationale:** 
+**Rationale:**
 
 **Decision record:** [Link to decisions/NNNN-*.md if created]
 
-**Assigned to:** 
+**Assigned to:**
 
-**Target release:** 
+**Target release:**
 
 ---
 
@@ -139,14 +139,14 @@ _Fill this in when committing to build (or deciding not to)._
 
 _Fill this in after the feature ships._
 
-**Shipped date:** 
+**Shipped date:**
 
-**Actual effort:** 
+**Actual effort:**
 
 **Metrics observed:**
 
 | Metric | Expected | Actual |
-|--------|----------|--------|
-| | | |
+| ------ | -------- | ------ |
+|        |          |        |
 
 **Retrospective notes:** _What did we learn? Was the RICE score accurate? Would we do it differently?_

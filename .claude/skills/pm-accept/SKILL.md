@@ -78,6 +78,7 @@ For medium features (1-2 weeks), create 2-4 sub-issues under an epic.
 For large features (3+ weeks), create an epic with 4-8 sub-issues.
 
 Include in each sub-task:
+
 - Clear description of what to build
 - Acceptance criteria (checkboxes)
 - Affected files (if known from evaluation)

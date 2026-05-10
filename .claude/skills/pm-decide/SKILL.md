@@ -58,7 +58,7 @@ Use the template at `product/decisions/_template.md` and fill in ALL sections:
 - **Consequences:** What becomes easier, what becomes harder, what risks remain
 - **References:** Links to related features, docs, or external resources
 
-Write from the perspective of someone reading this 6 months from now who needs to understand *why* this choice was made, not just *what* was chosen.
+Write from the perspective of someone reading this 6 months from now who needs to understand _why_ this choice was made, not just _what_ was chosen.
 
 ## Step 4: INDEX
 
@@ -84,6 +84,7 @@ Create a decision record when:
 - Deprecating a feature or removing functionality
 
 Do NOT create decision records for:
+
 - Routine implementation choices (which component library to use for a button)
 - Bug fixes
 - Performance optimizations with obvious approaches

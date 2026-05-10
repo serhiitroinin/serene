@@ -12,14 +12,14 @@ status: Draft
 
 ## Demographics
 
-| Attribute | Value |
-|-----------|-------|
-| **Role** | |
-| **Age range** | |
-| **Technical proficiency** | Low / Medium / High |
-| **Team size** | Solo / Small team / Large org |
-| **Content volume** | Occasional / Regular / High-volume |
-| **Budget sensitivity** | High / Medium / Low |
+| Attribute                 | Value                              |
+| ------------------------- | ---------------------------------- |
+| **Role**                  |                                    |
+| **Age range**             |                                    |
+| **Technical proficiency** | Low / Medium / High                |
+| **Team size**             | Solo / Small team / Large org      |
+| **Content volume**        | Occasional / Regular / High-volume |
+| **Budget sensitivity**    | High / Medium / Low                |
 
 ## Context
 
@@ -27,15 +27,15 @@ _Describe their typical day, what tools they use, how content creation fits into
 
 ## Goals
 
-1. **Primary:** 
-2. **Secondary:** 
-3. **Tertiary:** 
+1. **Primary:**
+2. **Secondary:**
+3. **Tertiary:**
 
 ## Frustrations
 
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ## Current Workflow
 
@@ -45,16 +45,16 @@ _How do they create content today? What tools do they stitch together?_
 
 > Use this section when evaluating features. Rate how much this persona cares about each capability area.
 
-| Capability | Priority | Notes |
-|-----------|----------|-------|
-| Recording speed/simplicity | | |
-| Video quality (4K, eye contact) | | |
-| AI features (transcription, summaries) | | |
-| Course publishing/commerce | | |
-| Branding/customization | | |
-| Analytics | | |
-| Collaboration | | |
-| Price sensitivity | | |
+| Capability                             | Priority | Notes |
+| -------------------------------------- | -------- | ----- |
+| Recording speed/simplicity             |          |       |
+| Video quality (4K, eye contact)        |          |       |
+| AI features (transcription, summaries) |          |       |
+| Course publishing/commerce             |          |       |
+| Branding/customization                 |          |       |
+| Analytics                              |          |       |
+| Collaboration                          |          |       |
+| Price sensitivity                      |          |       |
 
 ## Willingness to Pay
 
@@ -70,5 +70,5 @@ _Link to specific jobs in `research/jobs-to-be-done.md` that this persona hires 
 
 > _Gather these from interviews, support tickets, reviews of competitor products._
 
-1. 
-2. 
+1.
+2.

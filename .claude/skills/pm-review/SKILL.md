@@ -30,12 +30,14 @@ Reviews OKRs, backlog, roadmap, and competitive landscape.
 Read `product/strategy/okrs.md`.
 
 For each Key Result:
+
 - Check if there's analytics data available (PostHog, Stripe, Convex queries)
 - If data is available, update the "Current" column
 - If data is not available, note what instrumentation is needed
 - Score each KR: 0.0-1.0 based on available evidence
 
 If it's end-of-quarter:
+
 - Calculate final scores
 - Move current OKRs to "Previous Quarters" section
 - Draft next quarter's objectives based on what was learned
@@ -45,12 +47,15 @@ If it's end-of-quarter:
 Read `product/features/backlog.md`.
 
 ### Freshness Check
+
 For each active backlog item:
+
 - Is the RICE score still accurate? (has reach, impact, or effort changed?)
 - Is the feature still relevant to the current quarter's focus?
 - Should any items be moved to Deferred or removed?
 
 ### Codebase Verification
+
 For each "Proposed" or "Accepted" item, quickly verify it's not already implemented:
 
 ```bash
@@ -61,6 +66,7 @@ grep -r "<relevant keyword>" apps/web/src/ --include="*.ts" --include="*.tsx" -l
 If found to be implemented, move to "Already Shipped" section.
 
 ### Missing Features
+
 Scan recent git history for features that shipped but aren't tracked:
 
 ```bash
@@ -74,12 +80,14 @@ Note any shipped features not reflected in the backlog or roadmap.
 Read `product/roadmap.md`.
 
 ### Accuracy Audit
+
 - **Now column:** Are these items actually being worked on? Check for open PRs/issues.
 - **Next column:** Is this still the right set for next quarter? Re-rank by current RICE.
 - **Later column:** Should any items move forward (new evidence) or be removed (irrelevant)?
 - **Completed:** Is this up to date? Check recent merges.
 
 ### Roadmap vs OKRs
+
 Cross-reference: does every Now item map to a current OKR? If an item is in Now but doesn't serve any OKR, flag it.
 
 ## Step 4: COMPETITIVE
@@ -87,6 +95,7 @@ Cross-reference: does every Now item map to a current OKR? If an item is in Now 
 Read `product/research/competitors/landscape.md`.
 
 Quick web check for major competitor moves:
+
 - Have any competitors launched features that affect our positioning?
 - Has pricing changed in the market?
 - Any new entrants in the recording-for-educators space?
@@ -101,26 +110,31 @@ Produce a structured review report:
 ## Product Review — <date>
 
 ### OKR Status
+
 | Objective | Score | Trend | Notes |
-|-----------|-------|-------|-------|
-| O1: ... | X.X | ↑↓→ | ... |
+| --------- | ----- | ----- | ----- |
+| O1: ...   | X.X   | ↑↓→   | ...   |
 
 ### Backlog Health
+
 - Active items: X
 - Stale items (need re-scoring): X
 - Already implemented (removed): X
 - New items suggested: X
 
 ### Roadmap Accuracy
+
 - Now: X items, Y on track, Z stalled
 - Items to move forward: ...
 - Items to defer: ...
 
 ### Competitive Changes
+
 - Notable moves: ...
 - Impact on our positioning: ...
 
 ### Recommendations
+
 1. ...
 2. ...
 3. ...
