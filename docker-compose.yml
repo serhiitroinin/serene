@@ -1,0 +1,22 @@
+services:
+  serene:
+    build: .
+    image: serene:latest
+    container_name: serene
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      # Required. Generate with: openssl rand -base64 32
+      SERENE_ENCRYPTION_KEY: ${SERENE_ENCRYPTION_KEY:?SERENE_ENCRYPTION_KEY is required — see README}
+      # Optional WHOOP OAuth (register at https://developer.whoop.com)
+      WHOOP_CLIENT_ID: ${WHOOP_CLIENT_ID:-}
+      WHOOP_CLIENT_SECRET: ${WHOOP_CLIENT_SECRET:-}
+      WHOOP_REDIRECT_URI: ${WHOOP_REDIRECT_URI:-http://localhost:3001/api/auth/whoop/callback}
+      # Optional: pin the owner UUID; generated on first run if missing
+      SERENE_OWNER_ID: ${SERENE_OWNER_ID:-}
+    volumes:
+      - serene-data:/data
+
+volumes:
+  serene-data:
