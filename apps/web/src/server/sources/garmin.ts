@@ -291,9 +291,59 @@ async function fetchActivityList(payload: Payload): Promise<ReadonlyArray<Garmin
   );
 }
 
+type MetricDescriptor = { key: string; metricsIndex: number };
+
 type GarminDetail = {
   geoPolylineDTO?: { polyline?: ReadonlyArray<{ lat: number; lon: number; altitude?: number }> };
+  metricDescriptors?: ReadonlyArray<MetricDescriptor>;
+  activityDetailMetrics?: ReadonlyArray<{ metrics: ReadonlyArray<number | null> }>;
 };
+
+// Garmin's detail endpoint returns parallel arrays: `metricDescriptors` says
+// which key lives at which `metrics` index; `activityDetailMetrics` is the
+// per-sample tuple. Project that into per-sample objects.
+type ParsedSample = {
+  timestamp: Date | null;
+  lat: number | null;
+  lng: number | null;
+  elevation: number | null;
+  hr: number | null;
+  speed: number | null;
+};
+
+function parseDetailSamples(detail: GarminDetail, fallbackStart: Date): ParsedSample[] {
+  const descriptors = detail.metricDescriptors ?? [];
+  const metrics = detail.activityDetailMetrics ?? [];
+  if (descriptors.length === 0 || metrics.length === 0) return [];
+
+  const idx: Record<string, number | undefined> = {};
+  for (const d of descriptors) idx[d.key] = d.metricsIndex;
+
+  const samples: ParsedSample[] = [];
+  for (const row of metrics) {
+    const m = row.metrics;
+    const tIdx = idx.directTimestamp;
+    const tRaw = tIdx == null ? null : m[tIdx];
+    samples.push({
+      timestamp: typeof tRaw === "number" ? new Date(tRaw) : null,
+      lat: idx.directLatitude != null ? (m[idx.directLatitude] ?? null) : null,
+      lng: idx.directLongitude != null ? (m[idx.directLongitude] ?? null) : null,
+      elevation: idx.directAltitude != null ? (m[idx.directAltitude] ?? null) : null,
+      hr: idx.directHeartRate != null ? (m[idx.directHeartRate] ?? null) : null,
+      speed: idx.directSpeed != null ? (m[idx.directSpeed] ?? null) : null,
+    });
+  }
+
+  // If timestamps are missing, distribute evenly from the activity start.
+  const hasTimestamps = samples.some((s) => s.timestamp != null);
+  if (!hasTimestamps && samples.length > 1) {
+    for (let i = 0; i < samples.length; i++) {
+      samples[i]!.timestamp = new Date(fallbackStart.getTime() + i * 1000);
+    }
+  }
+
+  return samples;
+}
 
 // ── Scheduled workouts (GraphQL) ─────────────────────────────────
 
@@ -417,7 +467,7 @@ async function syncScheduledWorkouts(
 }
 
 async function fetchActivityDetail(
-  activityId: number,
+  activityId: number | string,
   payload: Payload,
 ): Promise<GarminDetail | null> {
   try {
@@ -441,8 +491,16 @@ async function syncGarmin(
   const result = await syncScheduledWorkouts({ payload }, ctx);
   payload = result.payload;
 
-  for (const a of activities) {
+  // Bound to last 30 days to match v0.1 scope.
+  const cutoffMs = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const recent = activities.filter((a) => new Date(a.startTimeLocal).getTime() >= cutoffMs);
+
+  for (const a of recent) {
     const start = new Date(a.startTimeLocal);
+    const trainingLoad =
+      typeof (a as { trainingLoad?: unknown }).trainingLoad === "number"
+        ? ((a as { trainingLoad: number }).trainingLoad ?? null)
+        : null;
     ctx.db
       .insert(garminActivities)
       .values({
@@ -455,7 +513,7 @@ async function syncGarmin(
         elevationGainMeters: a.elevationGain ?? null,
         avgHr: a.averageHR ? Math.round(a.averageHR) : null,
         maxHr: a.maxHR ? Math.round(a.maxHR) : null,
-        trainingLoad: null,
+        trainingLoad,
         hasGps: Boolean(a.hasPolyline),
         raw: a,
       })
@@ -463,37 +521,59 @@ async function syncGarmin(
       .run();
   }
 
-  const mostRecentWithGps = activities.find((a) => a.hasPolyline);
-  if (mostRecentWithGps) {
+  // Backfill track-points + per-sample HR/speed for outdoor activities in the
+  // 30d window that don't yet have any track points stored. One detail call
+  // per activity; idempotent.
+  for (const a of recent) {
+    if (!a.hasPolyline) continue;
     const existing = ctx.db
       .select()
       .from(garminTrackPoints)
-      .where(eq(garminTrackPoints.activityId, String(mostRecentWithGps.activityId)))
+      .where(eq(garminTrackPoints.activityId, String(a.activityId)))
       .limit(1)
       .all();
-    if (!existing[0]) {
-      const detail = await fetchActivityDetail(mostRecentWithGps.activityId, payload);
-      if (detail?.geoPolylineDTO?.polyline) {
-        const start = new Date(mostRecentWithGps.startTimeLocal);
-        const points = detail.geoPolylineDTO.polyline;
-        const stepMs =
-          points.length > 1
-            ? Math.round((mostRecentWithGps.duration * 1000) / points.length)
-            : 1000;
-        for (let i = 0; i < points.length; i++) {
-          const p = points[i]!;
-          ctx.db
-            .insert(garminTrackPoints)
-            .values({
-              activityId: String(mostRecentWithGps.activityId),
-              timestamp: new Date(start.getTime() + i * stepMs),
-              lat: p.lat,
-              lng: p.lon,
-              elevationM: p.altitude ?? null,
-              hrBpm: null,
-            })
-            .run();
-        }
+    if (existing[0]) continue;
+
+    const detail = await fetchActivityDetail(a.activityId, payload);
+    if (!detail) continue;
+    const start = new Date(a.startTimeLocal);
+    const samples = parseDetailSamples(detail, start);
+
+    if (samples.length > 0) {
+      // Prefer parsed samples (give us HR + speed). Fall back to geoPolylineDTO
+      // when no detail samples exist.
+      for (const s of samples) {
+        if (s.lat == null || s.lng == null || s.timestamp == null) continue;
+        ctx.db
+          .insert(garminTrackPoints)
+          .values({
+            activityId: String(a.activityId),
+            timestamp: s.timestamp,
+            lat: s.lat,
+            lng: s.lng,
+            elevationM: s.elevation,
+            hrBpm: s.hr != null ? Math.round(s.hr) : null,
+            speedMps: s.speed,
+          })
+          .run();
+      }
+    } else if (detail.geoPolylineDTO?.polyline) {
+      const points = detail.geoPolylineDTO.polyline;
+      const stepMs = points.length > 1 ? Math.round((a.duration * 1000) / points.length) : 1000;
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i]!;
+        ctx.db
+          .insert(garminTrackPoints)
+          .values({
+            activityId: String(a.activityId),
+            timestamp: new Date(start.getTime() + i * stepMs),
+            lat: p.lat,
+            lng: p.lon,
+            elevationM: p.altitude ?? null,
+            hrBpm: null,
+            speedMps: null,
+          })
+          .run();
       }
     }
   }

@@ -1,0 +1,1 @@
+ALTER TABLE `garmin_track_points` ADD `speed_mps` real;

@@ -132,6 +132,7 @@ export const garminTrackPoints = sqliteTable("garmin_track_points", {
   lng: real("lng").notNull(),
   elevationM: real("elevation_m"),
   hrBpm: integer("hr_bpm"),
+  speedMps: real("speed_mps"),
 });
 
 export const garminScheduledWorkouts = sqliteTable(
