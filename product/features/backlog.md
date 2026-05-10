@@ -18,28 +18,35 @@ status: Active
 
 See [roadmap](../roadmap.md) — F1–F20 are committed for the launch sprint and tracked as GitHub issues.
 
-| #   | Feature                                              | Status      | Issue          |
-| --- | ---------------------------------------------------- | ----------- | -------------- |
-| F1  | LibreLinkUp source (luff port)                       | In progress | (existing PRs) |
-| F2  | WHOOP OAuth + sync                                   | Shipped     | —              |
-| F3  | Garmin SSO web-widget auth (luff port)               | Proposed    | TBD            |
-| F4  | Garmin activities + track-points sync                | Proposed    | TBD            |
-| F5  | Garmin scheduled workouts via GraphQL                | Proposed    | TBD            |
-| F6  | Encryption at rest                                   | Shipped     | —              |
-| F7  | Setup wizard end-to-end                              | Proposed    | TBD            |
-| F8  | Docker compose + README + ENV docs                   | Proposed    | TBD            |
-| F9  | Today card                                           | Proposed    | TBD            |
-| F10 | Tomorrow card with planned workout                   | Proposed    | TBD            |
-| F11 | AGP-style 14-day percentile chart                    | Proposed    | TBD            |
-| F12 | Glucose × workout overlay                            | Proposed    | TBD            |
-| F13 | Activity map with glucose-on-route coloring          | Proposed    | TBD            |
-| F14 | Weekly review (TSS + CTL/ATL/TSB + TIR)              | Proposed    | TBD            |
-| F15 | Late-hypo descriptive risk badge                     | Proposed    | TBD            |
-| F16 | Last-sync timestamps on every page                   | Proposed    | TBD            |
-| F17 | Per-activity share token                             | Proposed    | TBD            |
-| F18 | Anti-scope footer + disclaimer                       | Proposed    | TBD            |
-| F19 | Public README + ARCHITECTURE.md + screenshots + Loom | Proposed    | TBD            |
-| F20 | Launch posts                                         | Proposed    | TBD            |
+| #   | Feature                                              | Status   | Issue | Epic |
+| --- | ---------------------------------------------------- | -------- | ----- | ---- |
+| F1  | LibreLinkUp source (luff port — validate + errors)   | Accepted | #11   | #10  |
+| F2  | WHOOP OAuth + sync                                   | Shipped  | —     | #10  |
+| F3  | Garmin SSO web-widget auth (luff port)               | Accepted | #12   | #10  |
+| F4  | Garmin activities + track-points sync                | Accepted | #13   | #10  |
+| F5  | Garmin scheduled workouts via GraphQL                | Accepted | #14   | #10  |
+| F6  | Encryption at rest (verify + document)               | Accepted | #15   | #10  |
+| F7  | Setup wizard end-to-end                              | Accepted | #25   | #24  |
+| F8  | Docker compose + README + ENV docs                   | Accepted | #26   | #24  |
+| F9  | Today card                                           | Accepted | #17   | #16  |
+| F10 | Tomorrow card with planned workout                   | Accepted | #18   | #16  |
+| F11 | AGP-style 14-day percentile chart                    | Accepted | #19   | #16  |
+| F12 | Glucose × workout overlay                            | Accepted | #20   | #16  |
+| F13 | Activity map with glucose-on-route coloring          | Accepted | #21   | #16  |
+| F14 | Weekly review (TSS + CTL/ATL/TSB + TIR)              | Accepted | #22   | #16  |
+| F15 | Late-hypo descriptive risk badge                     | Accepted | #23   | #16  |
+| F16 | Last-sync timestamps on every page                   | Accepted | #28   | #27  |
+| F17 | Per-activity share token                             | Accepted | #29   | #27  |
+| F18 | Anti-scope footer + disclaimer                       | Accepted | #30   | #27  |
+| F19 | Public README + ARCHITECTURE.md + screenshots + Loom | Accepted | #31   | #27  |
+| F20 | Launch posts                                         | Accepted | #32   | #27  |
+
+**Epics:**
+
+- #10 — sources epic (Libre + WHOOP + Garmin)
+- #16 — signature surfaces (Today, Tomorrow, AGP, overlay, map, weekly, late-hypo)
+- #24 — setup epic (wizard + Docker compose)
+- #27 — trust + launch (sync timestamps, share-link, disclaimers, README, Loom, posts)
 
 ---
 
