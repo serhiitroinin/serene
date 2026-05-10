@@ -8,6 +8,7 @@ import {
   CalendarClock,
   Plug,
 } from "lucide-react";
+import { TomorrowCard } from "~/components/app/tomorrow-card";
 import { PageTopbar } from "~/components/app/topbar";
 import { Sparkline } from "~/components/charts/sparkline";
 import {
@@ -153,6 +154,14 @@ function Dashboard() {
             <Stat tone="amber" label="Today's run" value="—" sub="connect Garmin" />
           )}
         </article>
+
+        <div className="lg:col-span-12">
+          <TomorrowCard
+            planned={d.tomorrow.planned}
+            overnightSeven={d.tomorrow.overnightSeven}
+            recovery7d={d.tomorrow.recovery7d}
+          />
+        </div>
 
         <article className="lg:col-span-7 rounded-3xl border border-border/40 bg-card/90 backdrop-blur-xl">
           <header className="flex items-baseline justify-between p-5 pb-3">
