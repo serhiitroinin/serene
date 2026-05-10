@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import { getDb, getOwnerId } from "../db/client";
 import {
   garminActivities,
+  garminScheduledWorkouts,
   garminTrackPoints,
   glucoseReadings,
   treatments,
@@ -17,6 +18,7 @@ export const getDashboardFn = createServerFn({ method: "GET" }).handler(async ()
 
   const sinceDay = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const sinceWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const sinceOvernight = new Date(Date.now() - 8 * 60 * 60 * 1000);
 
   const last24hReadings = db
     .select()
@@ -54,6 +56,20 @@ export const getDashboardFn = createServerFn({ method: "GET" }).handler(async ()
   const cv = avg > 0 ? Math.round((sd / avg) * 100) : 0;
   const gmi = avg > 0 ? Number((3.31 + 0.02392 * avg * 18).toFixed(1)) : 0;
 
+  // Overnight TIR (last 8h) — distinct from the 24h TIR. The "what happened
+  // while I slept" answer for the Today card.
+  const overnightReadings = last24hReadings.filter((r) => r.timestamp >= sinceOvernight);
+  let overnightInRange = 0;
+  for (const r of overnightReadings) {
+    if (r.valueMmol >= targetLow && r.valueMmol <= targetHigh) overnightInRange++;
+  }
+  const overnightTir = {
+    inRange: overnightReadings.length
+      ? Math.round((overnightInRange / overnightReadings.length) * 100)
+      : null,
+    readings: overnightReadings.length,
+  };
+
   const todayRecovery = db
     .select()
     .from(whoopRecoveries)
@@ -85,6 +101,21 @@ export const getDashboardFn = createServerFn({ method: "GET" }).handler(async ()
     .orderBy(desc(garminActivities.start))
     .limit(1)
     .all()[0];
+
+  // Today's planned workout from Garmin Coach (next not-yet-completed entry
+  // for today's date, if any). This is what F10 (Tomorrow card) extends.
+  const todayDateStr = new Date().toISOString().slice(0, 10);
+  const todaysScheduled = db
+    .select()
+    .from(garminScheduledWorkouts)
+    .where(
+      and(
+        eq(garminScheduledWorkouts.userId, userId),
+        eq(garminScheduledWorkouts.scheduledDate, todayDateStr),
+      ),
+    )
+    .all();
+  const todaysPlanned = todaysScheduled.find((s) => !s.completed) ?? null;
 
   const recentActivities = db
     .select()
@@ -136,6 +167,15 @@ export const getDashboardFn = createServerFn({ method: "GET" }).handler(async ()
       readings: last24hReadings.map((r) => ({ t: r.timestamp.getTime(), v: r.valueMmol })),
     },
     tir,
+    overnightTir,
+    todaysPlanned: todaysPlanned
+      ? {
+          name: todaysPlanned.name ?? "Scheduled workout",
+          sport: todaysPlanned.sport ?? null,
+          durationSeconds: todaysPlanned.durationSeconds ?? null,
+          planName: todaysPlanned.planName ?? null,
+        }
+      : null,
     today: {
       avg: Number(avg.toFixed(1)),
       gmi,

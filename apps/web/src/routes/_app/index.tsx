@@ -1,5 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, Plug } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUp,
+  ArrowUpRight,
+  CalendarClock,
+  Plug,
+} from "lucide-react";
 import { PageTopbar } from "~/components/app/topbar";
 import { Sparkline } from "~/components/charts/sparkline";
 import {
@@ -75,13 +83,17 @@ function Dashboard() {
           {hasGlucose ? (
             <>
               <p
-                className="mt-3 text-7xl font-semibold leading-[0.85] tabular-nums"
+                className="mt-3 flex items-baseline gap-3 text-7xl font-semibold leading-[0.85] tabular-nums"
                 style={display}
               >
                 {formatGlucose(d.glucose.current!)}
+                <TrendArrow trend={d.glucose.trend} />
               </p>
               <p className="text-sm text-muted-foreground">
-                mmol/L · {d.glucose.trend ?? "—"} · target 3.9 – 10.0
+                mmol/L · target 3.9 – 10.0
+                {d.overnightTir.inRange != null
+                  ? ` · overnight TIR ${d.overnightTir.inRange}%`
+                  : ""}
               </p>
               {hasReadings ? (
                 <div className="mt-5 h-24 text-emerald-500/85">
@@ -128,16 +140,18 @@ function Dashboard() {
             value={hasRecovery ? d.recovery!.strain.toFixed(1) : "—"}
             sub={hasActivity ? `avg HR ${d.todayActivity!.avgHr}` : "no workout today"}
           />
-          <Stat
-            tone="amber"
-            label="Today's run"
-            value={hasActivity ? formatDistance(d.todayActivity!.distance) : "—"}
-            sub={
-              hasActivity
-                ? `${formatDuration(d.todayActivity!.duration)} · ${formatPace(d.todayActivity!.duration, d.todayActivity!.distance)}`
-                : "connect Garmin"
-            }
-          />
+          {hasActivity ? (
+            <Stat
+              tone="amber"
+              label="Today's run"
+              value={formatDistance(d.todayActivity!.distance)}
+              sub={`${formatDuration(d.todayActivity!.duration)} · ${formatPace(d.todayActivity!.duration, d.todayActivity!.distance)}`}
+            />
+          ) : d.todaysPlanned ? (
+            <PlannedStat planned={d.todaysPlanned} />
+          ) : (
+            <Stat tone="amber" label="Today's run" value="—" sub="connect Garmin" />
+          )}
         </article>
 
         <article className="lg:col-span-7 rounded-3xl border border-border/40 bg-card/90 backdrop-blur-xl">
@@ -255,6 +269,68 @@ function Dashboard() {
         </article>
       </main>
     </>
+  );
+}
+
+function TrendArrow({
+  trend,
+}: {
+  trend: "rising_quick" | "rising" | "stable" | "falling" | "falling_quick" | null;
+}) {
+  if (!trend) return null;
+  const Icon = (
+    {
+      rising_quick: ArrowUp,
+      rising: ArrowUpRight,
+      stable: ArrowRight,
+      falling: ArrowDownRight,
+      falling_quick: ArrowDown,
+    } as const
+  )[trend];
+  const color = trend.startsWith("falling")
+    ? "text-amber-500"
+    : trend.startsWith("rising")
+      ? "text-rose-500"
+      : "text-emerald-500";
+  return (
+    <span className={`text-3xl ${color}`} aria-label={trend}>
+      <Icon className="size-7" />
+    </span>
+  );
+}
+
+function PlannedStat({
+  planned,
+}: {
+  planned: {
+    name: string;
+    sport: string | null;
+    durationSeconds: number | null;
+    planName: string | null;
+  };
+}) {
+  return (
+    <article className="rounded-2xl bg-card/95 p-5 ring-1 ring-amber-500/30 backdrop-blur-xl">
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
+        Today's plan
+      </p>
+      <p
+        className="mt-2 flex items-center gap-2 text-xl font-semibold tracking-tight"
+        style={display}
+      >
+        <CalendarClock className="size-4 text-amber-500" />
+        <span className="truncate">{planned.name}</span>
+      </p>
+      <p className="mt-1 truncate text-xs text-muted-foreground" style={mono}>
+        {[
+          planned.sport,
+          planned.durationSeconds ? formatDuration(planned.durationSeconds) : null,
+          planned.planName,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+    </article>
   );
 }
 
