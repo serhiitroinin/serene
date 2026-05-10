@@ -497,10 +497,8 @@ async function syncGarmin(
 
   for (const a of recent) {
     const start = new Date(a.startTimeLocal);
-    const trainingLoad =
-      typeof (a as { trainingLoad?: unknown }).trainingLoad === "number"
-        ? ((a as { trainingLoad: number }).trainingLoad ?? null)
-        : null;
+    const rawTrainingLoad = (a as unknown as Record<string, unknown>).trainingLoad;
+    const trainingLoad = typeof rawTrainingLoad === "number" ? rawTrainingLoad : null;
     ctx.db
       .insert(garminActivities)
       .values({
