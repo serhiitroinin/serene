@@ -1,54 +1,275 @@
+import { createHmac, randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { garminActivities, garminTrackPoints } from "../db/schema";
 import type { Source, SourceContext } from "./types";
 
-// NOTE: Garmin Connect has no public API for individuals. This is a minimal
-// reverse-engineered SSO flow modelled on the python-garth/garminconnect libs.
-// It is fragile by nature — Garmin occasionally changes their auth flow. When
-// it breaks, surface "syncing" → "error" in settings; user reconnects.
+// Garmin Connect SSO + OAuth1/OAuth2 flow ported verbatim from
+// luff/packages/garmin/src/auth.ts (per ADR-0003). The bot-protection layer
+// rejects fingerprints it doesn't recognize, so deviations from the proven
+// header set / endpoint shape break logins for real accounts.
 
-const MODERN_BASE = "https://connect.garmin.com/modern";
+const GARMIN_DOMAIN = "garmin.com";
+const SSO_ORIGIN = `https://sso.${GARMIN_DOMAIN}`;
+const CONNECT_API = `https://connectapi.${GARMIN_DOMAIN}`;
+const GC_MODERN = `https://connect.${GARMIN_DOMAIN}/modern`;
+const CONSUMER_URL = "https://thegarth.s3.amazonaws.com/oauth_consumer.json";
+
+const UA = "com.garmin.android.apps.connectmobile";
+
+type Consumer = { consumer_key: string; consumer_secret: string };
+
+let consumerCache: Consumer | null = null;
+async function getConsumer(): Promise<Consumer> {
+  if (consumerCache) return consumerCache;
+  const res = await fetch(CONSUMER_URL);
+  if (!res.ok) throw new Error(`Garmin consumer fetch failed: HTTP ${res.status}`);
+  consumerCache = (await res.json()) as Consumer;
+  return consumerCache;
+}
+
+function percentEncode(str: string): string {
+  return encodeURIComponent(str).replace(
+    /[!'()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+function oauth1Sign(
+  method: string,
+  url: string,
+  consumer: Consumer,
+  token: string | null,
+  tokenSecret: string,
+  extraParams?: Record<string, string>,
+): string {
+  const oauthParams: Record<string, string> = {
+    oauth_consumer_key: consumer.consumer_key,
+    oauth_nonce: randomBytes(16).toString("hex"),
+    oauth_signature_method: "HMAC-SHA1",
+    oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+    oauth_version: "1.0",
+  };
+  if (token) oauthParams.oauth_token = token;
+
+  const allParams: Record<string, string> = { ...oauthParams, ...extraParams };
+  const paramString = Object.keys(allParams)
+    .toSorted()
+    .map((k) => `${percentEncode(k)}=${percentEncode(allParams[k]!)}`)
+    .join("&");
+
+  const baseString = `${method.toUpperCase()}&${percentEncode(url)}&${percentEncode(paramString)}`;
+  const signingKey = `${percentEncode(consumer.consumer_secret)}&${percentEncode(tokenSecret)}`;
+  oauthParams.oauth_signature = createHmac("sha1", signingKey).update(baseString).digest("base64");
+
+  return (
+    "OAuth " +
+    Object.keys(oauthParams)
+      .toSorted()
+      .map((k) => `${percentEncode(k)}="${percentEncode(oauthParams[k]!)}"`)
+      .join(", ")
+  );
+}
+
+function extractCookies(res: Response): string {
+  const setCookies = res.headers.getSetCookie?.() ?? [];
+  return setCookies.map((c) => c.split(";")[0]).join("; ");
+}
+
+function mergeCookies(a: string, b: string): string {
+  if (!a) return b;
+  if (!b) return a;
+  return `${a}; ${b}`;
+}
 
 const payloadSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
-  region: z.string().default("global"),
   oauth1Token: z.string().optional(),
   oauth1Secret: z.string().optional(),
   oauth2Token: z.string().optional(),
-  oauth2Expires: z.number().optional(),
+  oauth2ExpiresAt: z.number().optional(),
+  refreshTokenExpiresAt: z.number().optional(),
 });
 
 type Payload = z.infer<typeof payloadSchema>;
 
-async function loginGarmin(payload: Payload): Promise<Payload> {
-  // This is a stub — a real implementation needs the full SSO ticket flow,
-  // CSRF token harvesting, and OAuth1 → OAuth2 token exchange. The community
-  // packages (garth, python-garminconnect) handle this in ~500 lines each.
-  //
-  // For v0.1 we accept credentials, store them encrypted, and let the sync
-  // task surface a clear error if the upstream flow has changed since we
-  // last shipped. Production should port the full flow from luff or use a
-  // maintained TS port of garth.
-  if (!payload.email || !payload.password) {
-    throw new Error("Garmin: email and password required");
+async function ssoLogin(
+  email: string,
+  password: string,
+): Promise<{ oauth1Token: string; oauth1Secret: string }> {
+  const consumer = await getConsumer();
+
+  // Step 1: prime SSO cookies
+  const embedUrl = `${SSO_ORIGIN}/sso/embed?clientId=GarminConnect&locale=en&service=${encodeURIComponent(GC_MODERN)}`;
+  const embedRes = await fetch(embedUrl, {
+    headers: { "User-Agent": UA },
+    redirect: "manual",
+  });
+  const cookies1 = extractCookies(embedRes);
+
+  // Step 2: harvest CSRF token from sign-in widget
+  const signinParams = new URLSearchParams({
+    id: "gauth-widget",
+    embedWidget: "true",
+    clientId: "GarminConnect",
+    locale: "en",
+    service: GC_MODERN,
+  });
+  const csrfRes = await fetch(`${SSO_ORIGIN}/sso/signin?${signinParams.toString()}`, {
+    headers: { "User-Agent": UA, Cookie: cookies1 },
+  });
+  const csrfHtml = await csrfRes.text();
+  const csrfMatch = csrfHtml.match(/name="_csrf"\s+value="(.+?)"/);
+  if (!csrfMatch) {
+    throw new Error("Garmin SSO: could not extract _csrf token (page format changed)");
   }
-  // Pretend we exchanged credentials for a token. The sync task will fail
-  // with a real-network error until a full SSO flow is ported here.
+  const csrf = csrfMatch[1]!;
+  const cookies2 = mergeCookies(cookies1, extractCookies(csrfRes));
+
+  // Step 3: submit credentials
+  const loginBody = new URLSearchParams({
+    username: email,
+    password,
+    embed: "true",
+    _csrf: csrf,
+  });
+  const loginRes = await fetch(`${SSO_ORIGIN}/sso/signin?${signinParams.toString()}`, {
+    method: "POST",
+    headers: {
+      "User-Agent": UA,
+      "Content-Type": "application/x-www-form-urlencoded",
+      Cookie: cookies2,
+    },
+    body: loginBody.toString(),
+    redirect: "manual",
+  });
+  const loginHtml = await loginRes.text();
+
+  if (loginHtml.includes("locked")) {
+    throw new Error(
+      "Garmin: account is locked. Sign in via the Garmin Connect website to unlock it, then retry.",
+    );
+  }
+
+  const ticketMatch = loginHtml.match(/ticket=([^"&\s]+)/);
+  if (!ticketMatch) {
+    if (/MFA|mfa|multi-factor/.test(loginHtml)) {
+      throw new Error(
+        "Garmin: MFA is enabled on this account. MFA is not yet supported in serene v0.1 — disable MFA on Garmin Connect or wait for v0.2 MFA support.",
+      );
+    }
+    throw new Error(
+      "Garmin: login failed — could not find auth ticket. Check email/password are correct.",
+    );
+  }
+  const ticket = ticketMatch[1]!;
+
+  // Step 4: exchange ticket for OAuth1 token
+  const preauthUrl = `${CONNECT_API}/oauth-service/oauth/preauthorized`;
+  const preauthHeader = oauth1Sign("GET", preauthUrl, consumer, null, "", { ticket });
+  const preauthRes = await fetch(`${preauthUrl}?ticket=${encodeURIComponent(ticket)}`, {
+    headers: { "User-Agent": UA, Authorization: preauthHeader },
+  });
+  if (!preauthRes.ok) {
+    throw new Error(`Garmin OAuth1 preauthorize HTTP ${preauthRes.status}`);
+  }
+  const preauthParams = new URLSearchParams(await preauthRes.text());
+  const oauthToken = preauthParams.get("oauth_token");
+  const oauthSecret = preauthParams.get("oauth_token_secret");
+  if (!oauthToken || !oauthSecret) {
+    throw new Error("Garmin OAuth1: response missing oauth_token / oauth_token_secret");
+  }
+  return { oauth1Token: oauthToken, oauth1Secret: oauthSecret };
+}
+
+type OAuth2Tokens = {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  refresh_token_expires_in: number;
+};
+
+async function exchangeOAuth2(
+  oauth1Token: string,
+  oauth1Secret: string,
+): Promise<{ token: string; expiresAt: number; refreshExpiresAt: number }> {
+  const consumer = await getConsumer();
+  const url = `${CONNECT_API}/oauth-service/oauth/exchange/user/2.0`;
+  const header = oauth1Sign("POST", url, consumer, oauth1Token, oauth1Secret);
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "User-Agent": UA,
+      Authorization: header,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Garmin OAuth2 exchange HTTP ${res.status}: ${await res.text()}`);
+  }
+  const data = (await res.json()) as OAuth2Tokens;
+  const now = Date.now();
   return {
-    ...payload,
-    oauth2Token: "PENDING_FULL_SSO_PORT",
-    oauth2Expires: Date.now() + 24 * 60 * 60 * 1000,
+    token: data.access_token,
+    // 60s safety margin
+    expiresAt: now + (data.expires_in - 60) * 1000,
+    refreshExpiresAt: now + (data.refresh_token_expires_in - 60) * 1000,
   };
 }
 
 async function ensureGarminToken(payload: Payload): Promise<Payload> {
   const margin = 5 * 60 * 1000;
-  if (payload.oauth2Token && payload.oauth2Expires && payload.oauth2Expires - margin > Date.now()) {
+  if (
+    payload.oauth2Token &&
+    payload.oauth2ExpiresAt &&
+    payload.oauth2ExpiresAt - margin > Date.now()
+  ) {
     return payload;
   }
-  return loginGarmin(payload);
+
+  // Refresh path: re-mint OAuth2 from saved OAuth1 tokens (the garth pattern;
+  // no separate refresh-token grant exists for the Garmin OAuth2 endpoint).
+  if (
+    payload.oauth1Token &&
+    payload.oauth1Secret &&
+    (!payload.refreshTokenExpiresAt || payload.refreshTokenExpiresAt > Date.now())
+  ) {
+    const fresh = await exchangeOAuth2(payload.oauth1Token, payload.oauth1Secret);
+    return {
+      ...payload,
+      oauth2Token: fresh.token,
+      oauth2ExpiresAt: fresh.expiresAt,
+      refreshTokenExpiresAt: fresh.refreshExpiresAt,
+    };
+  }
+
+  // Full re-login path
+  const oauth1 = await ssoLogin(payload.email, payload.password);
+  const oauth2 = await exchangeOAuth2(oauth1.oauth1Token, oauth1.oauth1Secret);
+  return {
+    ...payload,
+    oauth1Token: oauth1.oauth1Token,
+    oauth1Secret: oauth1.oauth1Secret,
+    oauth2Token: oauth2.token,
+    oauth2ExpiresAt: oauth2.expiresAt,
+    refreshTokenExpiresAt: oauth2.refreshExpiresAt,
+  };
+}
+
+async function garminGet<T>(path: string, payload: Payload): Promise<T> {
+  if (!payload.oauth2Token) throw new Error("Garmin: not authenticated");
+  const res = await fetch(`${CONNECT_API}${path}`, {
+    headers: {
+      "User-Agent": UA,
+      Authorization: `Bearer ${payload.oauth2Token}`,
+      Accept: "application/json",
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Garmin ${path} HTTP ${res.status}: ${(await res.text()).slice(0, 160)}`);
+  }
+  return (await res.json()) as T;
 }
 
 type GarminActivity = {
@@ -64,43 +285,28 @@ type GarminActivity = {
 };
 
 async function fetchActivityList(payload: Payload): Promise<ReadonlyArray<GarminActivity>> {
-  const res = await fetch(
-    `${MODERN_BASE}/proxy/activitylist-service/activities/search/activities?limit=20&start=0`,
-    {
-      headers: {
-        authorization: `Bearer ${payload.oauth2Token}`,
-        nk: "NT",
-        "x-app-ver": "5.7.0.0",
-        accept: "application/json",
-      },
-    },
+  return garminGet<ReadonlyArray<GarminActivity>>(
+    "/activitylist-service/activities/search/activities?limit=50&start=0",
+    payload,
   );
-  if (!res.ok) throw new Error(`Garmin activities HTTP ${res.status}`);
-  return (await res.json()) as ReadonlyArray<GarminActivity>;
 }
 
 type GarminDetail = {
   geoPolylineDTO?: { polyline?: ReadonlyArray<{ lat: number; lon: number; altitude?: number }> };
-  metricDescriptors?: ReadonlyArray<{ key: string; metricsIndex: number }>;
-  activityDetailMetrics?: ReadonlyArray<{ metrics: ReadonlyArray<number | null> }>;
 };
 
 async function fetchActivityDetail(
   activityId: number,
   payload: Payload,
 ): Promise<GarminDetail | null> {
-  const res = await fetch(
-    `${MODERN_BASE}/proxy/activity-service/activity/${activityId}/details?maxChartSize=2000&maxPolylineSize=4000`,
-    {
-      headers: {
-        authorization: `Bearer ${payload.oauth2Token}`,
-        nk: "NT",
-        accept: "application/json",
-      },
-    },
-  );
-  if (!res.ok) return null;
-  return (await res.json()) as GarminDetail;
+  try {
+    return await garminGet<GarminDetail>(
+      `/activity-service/activity/${activityId}/details?maxChartSize=2000&maxPolylineSize=4000`,
+      payload,
+    );
+  } catch {
+    return null;
+  }
 }
 
 async function syncGarmin(
@@ -175,28 +381,28 @@ export const garminSource: Source<Payload> = {
     id: "garmin",
     name: "Garmin Connect",
     description:
-      "Activities, training load, and GPS routes via reverse-engineered Garmin Connect login. Polls every 30 minutes. Most fragile of the three — Garmin occasionally changes their auth flow.",
+      "Activities, training load, GPS routes, and (in v0.1) the planned-workout list — via the reverse-engineered SSO web-widget flow. Polls every 30 minutes.",
     authType: "credentials",
     fields: [
       { key: "email", label: "Garmin Connect email", type: "email", required: true },
       { key: "password", label: "Password", type: "password", required: true },
-      {
-        key: "region",
-        label: "Region",
-        type: "select",
-        required: true,
-        options: [
-          { value: "global", label: "Global (.com)" },
-          { value: "cn", label: "China" },
-        ],
-      },
     ],
   },
   payloadSchema,
   authenticate: async (raw) => {
     const parsed = payloadSchema.parse(raw);
-    const tokens = await loginGarmin(parsed);
-    return { payload: tokens };
+    const oauth1 = await ssoLogin(parsed.email, parsed.password);
+    const oauth2 = await exchangeOAuth2(oauth1.oauth1Token, oauth1.oauth1Secret);
+    return {
+      payload: {
+        ...parsed,
+        oauth1Token: oauth1.oauth1Token,
+        oauth1Secret: oauth1.oauth1Secret,
+        oauth2Token: oauth2.token,
+        oauth2ExpiresAt: oauth2.expiresAt,
+        refreshTokenExpiresAt: oauth2.refreshExpiresAt,
+      },
+    };
   },
   sync: syncGarmin,
   syncTasks: [
