@@ -1,12 +1,15 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { AntiScopeFooter } from "~/components/app/anti-scope-footer";
 import { AppSidebar } from "~/components/app/sidebar";
+import { listSourcesFn } from "~/server/functions/sources";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
+  loader: () => listSourcesFn(),
 });
 
 function AppLayout() {
+  const sources = Route.useLoaderData();
   return (
     <div className="relative flex min-h-dvh flex-col bg-background text-foreground">
       <div
@@ -18,7 +21,7 @@ function AppLayout() {
         }}
       />
       <div className="relative grid flex-1 lg:grid-cols-[220px_1fr]">
-        <AppSidebar />
+        <AppSidebar sources={sources} />
         <div className="min-w-0">
           <Outlet />
         </div>
