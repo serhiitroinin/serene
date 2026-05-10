@@ -1,7 +1,7 @@
 import { createHmac, randomBytes } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { garminActivities, garminTrackPoints } from "../db/schema";
+import { garminActivities, garminScheduledWorkouts, garminTrackPoints } from "../db/schema";
 import type { Source, SourceContext } from "./types";
 
 // Garmin Connect SSO + OAuth1/OAuth2 flow ported verbatim from
@@ -295,6 +295,127 @@ type GarminDetail = {
   geoPolylineDTO?: { polyline?: ReadonlyArray<{ lat: number; lon: number; altitude?: number }> };
 };
 
+// ── Scheduled workouts (GraphQL) ─────────────────────────────────
+
+type ScheduledWorkoutSummary = {
+  workoutUuid?: string;
+  workoutName?: string;
+  workoutType?: string;
+  sport?: string;
+  scheduleDate?: string;
+  duration?: number;
+  description?: string;
+  completed?: boolean;
+  planName?: string;
+  tpPlanName?: string;
+};
+
+async function fetchScheduledWorkouts(
+  payload: Payload,
+  startDate: string,
+  endDate: string,
+): Promise<ReadonlyArray<ScheduledWorkoutSummary>> {
+  if (!payload.oauth2Token) throw new Error("Garmin: not authenticated");
+  const query = `query { workoutScheduleSummariesScalar(startDate:"${startDate}", endDate:"${endDate}") }`;
+  const res = await fetch(`${CONNECT_API}/graphql-gateway/graphql`, {
+    method: "POST",
+    headers: {
+      "User-Agent": UA,
+      Authorization: `Bearer ${payload.oauth2Token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) {
+    throw new Error(`Garmin GraphQL HTTP ${res.status}: ${(await res.text()).slice(0, 160)}`);
+  }
+  const json = (await res.json()) as {
+    data?: { workoutScheduleSummariesScalar?: ReadonlyArray<ScheduledWorkoutSummary> };
+    errors?: ReadonlyArray<{ message?: string }>;
+  };
+  if (json.errors?.length) {
+    throw new Error(`Garmin GraphQL errors: ${json.errors.map((e) => e.message).join("; ")}`);
+  }
+  return json.data?.workoutScheduleSummariesScalar ?? [];
+}
+
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+async function syncScheduledWorkouts(
+  input: { payload: Payload },
+  ctx: SourceContext,
+): Promise<{ payload: Payload }> {
+  const payload = await ensureGarminToken(input.payload);
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(start.getDate() - 1);
+  const end = new Date(today);
+  end.setDate(end.getDate() + 14);
+
+  const summaries = await fetchScheduledWorkouts(payload, isoDate(start), isoDate(end));
+
+  for (const s of summaries) {
+    if (!s.workoutUuid || !s.scheduleDate) continue;
+    ctx.db
+      .insert(garminScheduledWorkouts)
+      .values({
+        userId: ctx.userId,
+        sourceWorkoutUuid: s.workoutUuid,
+        scheduledDate: s.scheduleDate,
+        name: s.workoutName ?? null,
+        sport: s.sport ?? s.workoutType ?? null,
+        durationSeconds: s.duration ?? null,
+        description: s.description ?? null,
+        planName: s.tpPlanName ?? s.planName ?? null,
+        completed: Boolean(s.completed),
+        raw: s,
+      })
+      .onConflictDoUpdate({
+        target: [garminScheduledWorkouts.userId, garminScheduledWorkouts.sourceWorkoutUuid],
+        set: {
+          scheduledDate: s.scheduleDate,
+          name: s.workoutName ?? null,
+          sport: s.sport ?? s.workoutType ?? null,
+          durationSeconds: s.duration ?? null,
+          description: s.description ?? null,
+          planName: s.tpPlanName ?? s.planName ?? null,
+          completed: Boolean(s.completed),
+          raw: s,
+          updatedAt: new Date(),
+        },
+      })
+      .run();
+  }
+
+  // Prune any stored future-date entries that no longer appear in the API
+  // window — they were cancelled/rescheduled. Past entries kept as history.
+  const todayStr = isoDate(today);
+  const keepIds = new Set(summaries.map((s) => s.workoutUuid).filter(Boolean) as string[]);
+  const stored = ctx.db
+    .select()
+    .from(garminScheduledWorkouts)
+    .where(eq(garminScheduledWorkouts.userId, ctx.userId))
+    .all();
+  for (const row of stored) {
+    if (row.scheduledDate >= todayStr && !keepIds.has(row.sourceWorkoutUuid)) {
+      ctx.db
+        .delete(garminScheduledWorkouts)
+        .where(
+          and(
+            eq(garminScheduledWorkouts.userId, ctx.userId),
+            eq(garminScheduledWorkouts.sourceWorkoutUuid, row.sourceWorkoutUuid),
+          ),
+        )
+        .run();
+    }
+  }
+
+  return { payload };
+}
+
 async function fetchActivityDetail(
   activityId: number,
   payload: Payload,
@@ -313,8 +434,12 @@ async function syncGarmin(
   input: { payload: Payload },
   ctx: SourceContext,
 ): Promise<{ payload: Payload }> {
-  const payload = await ensureGarminToken(input.payload);
+  let payload = await ensureGarminToken(input.payload);
   const activities = await fetchActivityList(payload);
+
+  // Pull scheduled workouts on the same tick — single round-trip is cheap.
+  const result = await syncScheduledWorkouts({ payload }, ctx);
+  payload = result.payload;
 
   for (const a of activities) {
     const start = new Date(a.startTimeLocal);

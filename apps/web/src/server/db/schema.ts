@@ -134,6 +134,28 @@ export const garminTrackPoints = sqliteTable("garmin_track_points", {
   hrBpm: integer("hr_bpm"),
 });
 
+export const garminScheduledWorkouts = sqliteTable(
+  "garmin_scheduled_workouts",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sourceWorkoutUuid: text("source_workout_uuid").notNull(),
+    scheduledDate: text("scheduled_date").notNull(),
+    name: text("name"),
+    sport: text("sport"),
+    durationSeconds: integer("duration_seconds"),
+    description: text("description"),
+    planName: text("plan_name"),
+    completed: integer("completed", { mode: "boolean" }).notNull().default(false),
+    raw: text("raw", { mode: "json" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [unique().on(t.userId, t.sourceWorkoutUuid)],
+);
+
 export const garminDailySummaries = sqliteTable(
   "garmin_daily_summaries",
   {
@@ -188,6 +210,7 @@ export type WhoopSleep = typeof whoopSleeps.$inferSelect;
 export type WhoopWorkout = typeof whoopWorkouts.$inferSelect;
 export type GarminActivity = typeof garminActivities.$inferSelect;
 export type GarminTrackPoint = typeof garminTrackPoints.$inferSelect;
+export type GarminScheduledWorkout = typeof garminScheduledWorkouts.$inferSelect;
 export type GarminDailySummary = typeof garminDailySummaries.$inferSelect;
 export type Treatment = typeof treatments.$inferSelect;
 export type SyncState = typeof syncState.$inferSelect;
