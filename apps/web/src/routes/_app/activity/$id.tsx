@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Heart, MapPin, Mountain, Timer } from "lucide-react";
 import { PageTopbar } from "~/components/app/topbar";
-import { Sparkline } from "../../../components/charts/sparkline";
+import { WorkoutOverlay, ZoneStats } from "../../../components/charts/workout-overlay";
 import { Map, MapControls, MapMarker, MapRoute, MarkerContent } from "../../../components/ui/map";
 import {
   computeRouteCenter,
@@ -98,32 +98,54 @@ function ActivityDetail() {
 
         {a.glucoseOverlap.length > 0 ? (
           <section className="rounded-3xl border border-border/40 bg-card/90 p-5 backdrop-blur-xl">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" style={mono}>
-              glucose during this activity
-            </p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums" style={display}>
-              <span className="text-emerald-600 dark:text-emerald-400">
-                {a.glucoseOverlap[0]!.v.toFixed(1)}
+            <div className="flex items-baseline justify-between">
+              <div>
+                <p
+                  className="text-xs uppercase tracking-[0.2em] text-muted-foreground"
+                  style={mono}
+                >
+                  glucose × workout · synced timeline
+                </p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums" style={display}>
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    {a.glucoseOverlap[0]!.v.toFixed(1)}
+                  </span>
+                  <span className="mx-2 text-sm text-muted-foreground">→</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    {a.glucoseOverlap.at(-1)!.v.toFixed(1)}
+                  </span>
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    mmol/L · ΔBG {(a.glucoseOverlap.at(-1)!.v - a.glucoseOverlap[0]!.v).toFixed(1)}
+                  </span>
+                </p>
+              </div>
+              <span className="text-xs text-muted-foreground" style={mono}>
+                {a.glucoseOverlap.length} readings · {a.track.length} samples
               </span>
-              <span className="mx-2 text-muted-foreground text-sm">→</span>
-              <span className="text-emerald-600 dark:text-emerald-400">
-                {a.glucoseOverlap.at(-1)!.v.toFixed(1)}
-              </span>
-              <span className="ml-2 text-sm text-muted-foreground">
-                mmol/L · ΔBG {(a.glucoseOverlap.at(-1)!.v - a.glucoseOverlap[0]!.v).toFixed(1)}
-              </span>
-            </p>
-            <div className="mt-4 h-32">
-              <Sparkline
-                data={a.glucoseOverlap}
-                width={1200}
-                height={128}
-                showRangeBand
-                strokeColor="hsl(150 60% 55%)"
-                bandColor="hsl(150 60% 55%)"
+            </div>
+            <div className="mt-4 h-72">
+              <WorkoutOverlay
+                start={a.start}
+                duration={a.duration}
+                track={a.track}
+                glucose={a.glucoseOverlap}
                 className="size-full"
               />
             </div>
+            {a.maxHr > 0 ? (
+              <div className="mt-5">
+                <p
+                  className="mb-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground"
+                  style={mono}
+                >
+                  median glucose per HR zone
+                </p>
+                <ZoneStats track={a.track} glucose={a.glucoseOverlap} maxHr={a.maxHr} />
+              </div>
+            ) : null}
+            <p className="mt-4 text-[11px] text-muted-foreground" style={mono}>
+              HR · speed · glucose on a shared time axis. Descriptive view; not a prediction.
+            </p>
           </section>
         ) : (
           <section className="rounded-3xl border border-dashed border-border/60 bg-card/40 p-5 text-sm text-muted-foreground">
